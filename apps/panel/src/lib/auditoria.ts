@@ -10,7 +10,7 @@ export type ActaDetalle = {
   mesa_id: string;
   contest_id: string;
   submitted_by: string | null;
-  mesas: { numero_mesa: number; recinto_id: string; recintos: { nombre: string } };
+  mesas: { numero_mesa: number; numero_junta_oficial: string | null; recinto_id: string; recintos: { nombre: string } };
   contests: { nombre: string; tipo: string };
 };
 
@@ -41,7 +41,7 @@ export async function obtenerActaDetalle(actaId: string): Promise<ActaDetalle> {
   const { data, error } = await supabase
     .from("actas")
     .select(
-      "id, estado, votos_blancos, votos_nulos, submitted_at, verified_at, mesa_id, contest_id, submitted_by, mesas ( numero_mesa, recinto_id, recintos ( nombre ) ), contests ( nombre, tipo )"
+      "id, estado, votos_blancos, votos_nulos, submitted_at, verified_at, mesa_id, contest_id, submitted_by, mesas ( numero_mesa, numero_junta_oficial, recinto_id, recintos ( nombre ) ), contests ( nombre, tipo )"
     )
     .eq("id", actaId)
     .single();

@@ -1,3 +1,4 @@
+import { formatearMesa } from "@control-electoral/domain";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { obtenerActas, type ActaListItem } from "../lib/queries";
@@ -61,7 +62,7 @@ export function ActasList({ perfil, onSalir }: Props) {
             {actas.map((a) => (
               <tr key={a.id}>
                 <td>{a.mesas?.recintos.nombre ?? "-"}</td>
-                <td>{a.mesas?.numero_mesa ?? "-"}</td>
+                <td>{a.mesas ? formatearMesa(a.mesas) : "-"}</td>
                 <td>{a.contests?.nombre ?? "-"}</td>
                 <td>
                   <span className={`estado estado-${a.estado.toLowerCase()}`}>{a.estado}</span>

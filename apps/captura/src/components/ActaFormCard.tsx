@@ -1,3 +1,4 @@
+import { formatearMesa } from "@control-electoral/domain";
 import { useState } from "react";
 import type { CandidateRow, MesaRow, ContestRow } from "../lib/queries";
 import { encolarActa } from "../lib/sync";
@@ -44,7 +45,7 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
   return (
     <div className="card">
       <h3>
-        Mesa {mesa.numero_mesa} — {contest.nombre}
+        {formatearMesa(mesa)} — {contest.nombre}
       </h3>
 
       {candidatos.map((c) => (

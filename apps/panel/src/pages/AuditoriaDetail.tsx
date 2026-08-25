@@ -1,3 +1,4 @@
+import { formatearMesa } from "@control-electoral/domain";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -122,7 +123,7 @@ export function AuditoriaDetail() {
       <header className="encabezado-panel">
         <div>
           <h1>
-            Mesa {acta.mesas.numero_mesa} — {acta.contests.nombre}
+            {formatearMesa(acta.mesas)} — {acta.contests.nombre}
           </h1>
           <p>
             {acta.mesas.recintos.nombre} · <span className={`estado estado-${acta.estado.toLowerCase()}`}>{acta.estado}</span>

@@ -9,7 +9,7 @@ export type PerfilRow = {
   mesa_id: string | null;
 };
 
-export type MesaRow = { id: string; numero_mesa: number; recinto_id: string };
+export type MesaRow = { id: string; numero_mesa: number; recinto_id: string; numero_junta_oficial: string | null };
 export type ParroquiaRow = { id: string; nombre: string; es_urbana: boolean };
 export type ContestRow = {
   id: string;
@@ -52,7 +52,7 @@ export async function obtenerMesasAsignadas(perfil: PerfilRow): Promise<MesaRow[
   if (perfil.rol === "VEEDOR" && perfil.mesa_id) {
     const { data, error } = await supabase
       .from("mesas")
-      .select("id, numero_mesa, recinto_id")
+      .select("id, numero_mesa, recinto_id, numero_junta_oficial")
       .eq("id", perfil.mesa_id);
     if (error) throw error;
     return data as MesaRow[];
@@ -60,7 +60,7 @@ export async function obtenerMesasAsignadas(perfil: PerfilRow): Promise<MesaRow[
   if (perfil.rol === "COORDINADOR" && perfil.recinto_id) {
     const { data, error } = await supabase
       .from("mesas")
-      .select("id, numero_mesa, recinto_id")
+      .select("id, numero_mesa, recinto_id, numero_junta_oficial")
       .eq("recinto_id", perfil.recinto_id)
       .order("numero_mesa");
     if (error) throw error;

@@ -1,3 +1,4 @@
+import { formatearMesa } from "@control-electoral/domain";
 import type { ActaFotoRow, ActaRow, ActaVotoRow, CandidateRow, ContestRow, MesaRow } from "../lib/queries";
 import type { FotoPendiente, SyncStatus } from "../lib/db";
 import { PhotoUpload } from "./PhotoUpload";
@@ -56,7 +57,7 @@ export function ActaReadOnlyCard({
   return (
     <div className="card card-solo-lectura">
       <h3>
-        Mesa {mesa.numero_mesa} — {contest.nombre}
+        {formatearMesa(mesa)} — {contest.nombre}
       </h3>
 
       {syncPendiente ? (

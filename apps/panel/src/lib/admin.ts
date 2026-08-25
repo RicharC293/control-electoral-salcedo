@@ -97,7 +97,13 @@ export async function subirFotoCandidato(candidateId: string, archivo: File): Pr
 
 // ===== Geografía (para los formularios) =====
 export type RecintoOpcion = { id: string; nombre: string; parroquia_nombre: string };
-export type MesaOpcion = { id: string; numero_mesa: number; recinto_id: string; sexo: "F" | "M" };
+export type MesaOpcion = {
+  id: string;
+  numero_mesa: number;
+  recinto_id: string;
+  sexo: "F" | "M";
+  numero_junta_oficial: string | null;
+};
 
 export async function listarRecintos(): Promise<RecintoOpcion[]> {
   const { data, error } = await supabase
@@ -115,7 +121,7 @@ export async function listarRecintos(): Promise<RecintoOpcion[]> {
 export async function listarMesasDeRecinto(recintoId: string): Promise<MesaOpcion[]> {
   const { data, error } = await supabase
     .from("mesas")
-    .select("id, numero_mesa, recinto_id, sexo")
+    .select("id, numero_mesa, recinto_id, sexo, numero_junta_oficial")
     .eq("recinto_id", recintoId)
     .order("numero_mesa");
   if (error) throw error;
@@ -134,13 +140,23 @@ export type PerfilAdmin = {
   recinto_id: string | null;
   mesa_id: string | null;
   activo: boolean;
-  mesas: { recinto_id: string } | null;
+  mesas: {
+    recinto_id: string;
+    numero_mesa: number;
+    numero_junta_oficial: string | null;
+    recintos: { nombre: string };
+  } | null;
+  recintos: { nombre: string } | null;
 };
 
 export async function listarPerfiles(): Promise<PerfilAdmin[]> {
   const { data, error } = await supabase
     .from("perfiles")
-    .select("id, nombres, apellidos, telefono, cedula, email, rol, recinto_id, mesa_id, activo, mesas ( recinto_id )")
+    .select(
+      "id, nombres, apellidos, telefono, cedula, email, rol, recinto_id, mesa_id, activo, " +
+        "mesas ( recinto_id, numero_mesa, numero_junta_oficial, recintos ( nombre ) ), " +
+        "recintos ( nombre )"
+    )
     .order("rol");
   if (error) throw error;
   return data as unknown as PerfilAdmin[];

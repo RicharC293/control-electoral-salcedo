@@ -1,3 +1,4 @@
+import { formatearMesa } from "@control-electoral/domain";
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import {
@@ -23,6 +24,16 @@ const ROL_LABEL: Record<PerfilAdmin["rol"], string> = {
 };
 
 const SEXO_LABEL: Record<MesaOpcion["sexo"], string> = { F: "Femenina", M: "Masculina" };
+
+function ubicacionDe(p: PerfilAdmin): string {
+  if (p.rol === "VEEDOR" && p.mesas) {
+    return `${p.mesas.recintos.nombre} · ${formatearMesa(p.mesas)}`;
+  }
+  if (p.rol === "COORDINADOR" && p.recintos) {
+    return `${p.recintos.nombre} (todo el recinto)`;
+  }
+  return "-";
+}
 
 export function Perfiles({ rol, perfilId }: Props) {
   const [perfiles, setPerfiles] = useState<PerfilAdmin[]>([]);
@@ -171,7 +182,7 @@ export function Perfiles({ rol, perfilId }: Props) {
                 <option value="">Selecciona una mesa</option>
                 {mesas.map((m) => (
                   <option key={m.id} value={m.id}>
-                    Mesa {m.numero_mesa} ({SEXO_LABEL[m.sexo]})
+                    {formatearMesa(m)} ({SEXO_LABEL[m.sexo]})
                   </option>
                 ))}
               </select>
@@ -222,6 +233,7 @@ export function Perfiles({ rol, perfilId }: Props) {
             <tr>
               <th>Nombre</th>
               <th>Rol</th>
+              <th>Ubicación</th>
               <th>Cédula</th>
               <th>Contacto</th>
               <th>Activo</th>
@@ -235,6 +247,7 @@ export function Perfiles({ rol, perfilId }: Props) {
                   {p.nombres} {p.apellidos}
                 </td>
                 <td>{ROL_LABEL[p.rol]}</td>
+                <td>{ubicacionDe(p)}</td>
                 <td>{p.cedula ?? "-"}</td>
                 <td>{p.telefono ?? p.email ?? "-"}</td>
                 <td>

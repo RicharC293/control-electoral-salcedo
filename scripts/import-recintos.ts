@@ -179,11 +179,26 @@ async function main() {
     const numFemeninas = num(f["JUN FEM"]);
     // Dentro de cada recinto, las primeras jun_fem mesas son femeninas y el
     // resto masculinas (mismo criterio que el backfill de la migración 0012).
+    //
+    // El número real de junta (el que va impreso en el acta física) no es
+    // nuestro numero_mesa interno -- sale de JUN INIF/FINF (rango de juntas
+    // femeninas) y JUN INIM/FINM (rango de juntas masculinas). El tamaño de
+    // cada rango siempre coincide con JUN FEM/JUN MAS, así que la posición
+    // de una mesa dentro de su grupo de sexo lleva directo al número oficial:
+    // la i-ésima mesa femenina es JUN INIF + (i-1), la j-ésima masculina es
+    // JUN INIM + (j-1).
+    const iniF = num(f["JUN INIF"]);
+    const iniM = num(f["JUN INIM"]);
     for (let numeroMesa = 1; numeroMesa <= numMesas; numeroMesa++) {
-      const sexo = numeroMesa <= numFemeninas ? "F" : "M";
-      const { error: errMesa } = await supabase
-        .from("mesas")
-        .upsert({ recinto_id: recinto.id, numero_mesa: numeroMesa, sexo }, { onConflict: "recinto_id,numero_mesa" });
+      const esFemenina = numeroMesa <= numFemeninas;
+      const sexo = esFemenina ? "F" : "M";
+      const numeroJuntaOficial = esFemenina
+        ? String(iniF + (numeroMesa - 1))
+        : String(iniM + (numeroMesa - numFemeninas - 1));
+      const { error: errMesa } = await supabase.from("mesas").upsert(
+        { recinto_id: recinto.id, numero_mesa: numeroMesa, sexo, numero_junta_oficial: numeroJuntaOficial },
+        { onConflict: "recinto_id,numero_mesa" }
+      );
       if (errMesa) throw errMesa;
     }
     totalMesas += numMesas;
