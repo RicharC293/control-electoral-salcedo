@@ -851,3 +851,100 @@ a {
   width: auto;
   margin: 0;
 }
+
+.campo-orden {
+  max-width: 320px;
+  margin-bottom: 18px;
+}
+
+.campo-orden select {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.lista-recintos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recinto-grupo {
+  margin-bottom: 0;
+}
+
+.recinto-grupo .tabla-actas {
+  margin-top: 12px;
+}
+
+.recinto-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.recinto-encabezado strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.recinto-parroquia {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--color-texto-suave);
+  margin-top: 2px;
+}
+
+.recinto-cobertura {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge-cobertura,
+.badge-coordinador {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--color-superficie-alt);
+  color: var(--color-texto-suave);
+}
+
+.badge-cobertura.badge-completo {
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
+}
+
+.badge-coordinador.badge-si {
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
+}
+
+.badge-coordinador.badge-no {
+  background: var(--color-error-suave);
+  color: var(--color-error);
+}
+
+.barra-cobertura {
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-superficie-alt);
+  overflow: hidden;
+}
+
+.barra-cobertura-relleno {
+  height: 100%;
+  background: var(--color-primario);
+  border-radius: 999px;
+  transition: width var(--transicion);
+}
+
+.recinto-grupo .nota-bloqueo {
+  margin: 12px 0 0;
+}

@@ -128,6 +128,18 @@ export async function listarMesasDeRecinto(recintoId: string): Promise<MesaOpcio
   return data as MesaOpcion[];
 }
 
+// Cuántas mesas tiene cada recinto -- usado en Veeduría para mostrar cuántos
+// veedores hacen falta todavía en cada uno.
+export async function contarMesasPorRecinto(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("mesas").select("recinto_id");
+  if (error) throw error;
+  const conteo: Record<string, number> = {};
+  for (const m of data as { recinto_id: string }[]) {
+    conteo[m.recinto_id] = (conteo[m.recinto_id] ?? 0) + 1;
+  }
+  return conteo;
+}
+
 // ===== Perfiles =====
 export type PerfilAdmin = {
   id: string;
@@ -201,7 +213,7 @@ export type CrearPerfilInput = {
 // casos esperados (validación, duplicado de cédula/teléfono, etc.), pero
 // supabase-js solo expone un mensaje genérico en error.message cuando el
 // status no es 2xx -- hay que leer el body real desde error.context.
-async function extraerMensajeError(error: unknown): Promise<string> {
+async function extraerMensajeError(error: unknown, porDefecto = "No se pudo crear el perfil."): Promise<string> {
   const conContexto = error as { context?: Response } | null;
   if (conContexto?.context instanceof Response) {
     try {
@@ -211,7 +223,7 @@ async function extraerMensajeError(error: unknown): Promise<string> {
       // seguir al mensaje por defecto
     }
   }
-  return "No se pudo crear el perfil.";
+  return porDefecto;
 }
 
 export async function crearPerfil(input: CrearPerfilInput): Promise<{ tempPassword: string | null }> {
@@ -222,6 +234,17 @@ export async function crearPerfil(input: CrearPerfilInput): Promise<{ tempPasswo
   if (error) throw new Error(await extraerMensajeError(error));
   if (data?.error) throw new Error(data.error);
   return { tempPassword: data?.tempPassword ?? null };
+}
+
+// También elimina, del lado del servidor, cualquier enlace de acceso
+// (access_tokens) que tuviera el perfil -- un enlace ya compartido por
+// WhatsApp deja de servir en cuanto se borra al veedor/coordinador.
+export async function eliminarPerfil(perfilId: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("eliminar-perfil", {
+    body: { perfilId },
+  });
+  if (error) throw new Error(await extraerMensajeError(error, "No se pudo eliminar el perfil."));
+  if (data?.error) throw new Error(data.error);
 }
 
 // ===== Tokens de acceso / enlaces WhatsApp =====

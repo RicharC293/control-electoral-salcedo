@@ -13,7 +13,8 @@ export function AdminNav({ rol }: Props) {
         <>
           <NavLink to="/admin/contiendas">Contiendas</NavLink>
           <NavLink to="/admin/candidatos">Candidatos</NavLink>
-          <NavLink to="/admin/perfiles">Perfiles</NavLink>
+          <NavLink to="/admin/veeduria">Veeduría</NavLink>
+          <NavLink to="/admin/usuarios">Usuarios</NavLink>
           <NavLink to="/admin/apariencia">Apariencia</NavLink>
         </>
       )}

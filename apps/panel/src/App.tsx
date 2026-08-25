@@ -10,7 +10,8 @@ import { Login } from "./pages/Login";
 import { Apariencia } from "./pages/admin/Apariencia";
 import { Candidatos } from "./pages/admin/Candidatos";
 import { Contiendas } from "./pages/admin/Contiendas";
-import { Perfiles } from "./pages/admin/Perfiles";
+import { Usuarios } from "./pages/admin/Usuarios";
+import { Veeduria } from "./pages/admin/Veeduria";
 
 export default function App() {
   const [perfil, setPerfil] = useState<PerfilPanel | null | "cargando">("cargando");
@@ -50,7 +51,8 @@ export default function App() {
           <>
             <Route path="/admin/contiendas" element={<Contiendas rol={perfil.rol} />} />
             <Route path="/admin/candidatos" element={<Candidatos rol={perfil.rol} />} />
-            <Route path="/admin/perfiles" element={<Perfiles rol={perfil.rol} perfilId={perfil.id} />} />
+            <Route path="/admin/veeduria" element={<Veeduria rol={perfil.rol} perfilId={perfil.id} />} />
+            <Route path="/admin/usuarios" element={<Usuarios rol={perfil.rol} perfilId={perfil.id} />} />
             <Route path="/admin/apariencia" element={<Apariencia rol={perfil.rol} />} />
           </>
         ) : (
