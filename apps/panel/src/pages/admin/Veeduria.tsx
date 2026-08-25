@@ -15,6 +15,7 @@ import {
   type PerfilAdmin,
   type RecintoOpcion,
 } from "../../lib/admin";
+import { useToast } from "../../lib/toast";
 
 type Enlace = { url: string; waUrl: string };
 
@@ -84,6 +85,7 @@ function construirResumen(
 }
 
 export function Veeduria({ rol, perfilId }: Props) {
+  const { mostrarExito, mostrarError } = useToast();
   const [perfiles, setPerfiles] = useState<PerfilAdmin[]>([]);
   const [recintos, setRecintos] = useState<RecintoOpcion[]>([]);
   const [conteoMesas, setConteoMesas] = useState<Record<string, number>>({});
@@ -100,7 +102,6 @@ export function Veeduria({ rol, perfilId }: Props) {
   const [recintoId, setRecintoId] = useState("");
   const [mesaId, setMesaId] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [enlaces, setEnlaces] = useState<Record<string, { url: string; waUrl: string }>>({});
 
   function cargar() {
@@ -129,7 +130,6 @@ export function Veeduria({ rol, perfilId }: Props) {
   async function handleCrear(e: React.FormEvent) {
     e.preventDefault();
     setGuardando(true);
-    setError(null);
     try {
       await crearPerfil({
         nombres,
@@ -147,8 +147,9 @@ export function Veeduria({ rol, perfilId }: Props) {
       setRecintoId("");
       setMesaId("");
       cargar();
+      mostrarExito(rolNuevo === "VEEDOR" ? "Veedor agregado." : "Coordinador agregado.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el perfil.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo crear el perfil.");
     } finally {
       setGuardando(false);
     }
@@ -159,20 +160,21 @@ export function Veeduria({ rol, perfilId }: Props) {
       const enlace = await generarEnlaceAcceso(p, perfilId);
       localStorage.setItem(claveEnlace(p.id), JSON.stringify(enlace));
       setEnlaces((prev) => ({ ...prev, [p.id]: enlace }));
+      mostrarExito("Enlace generado.");
     } catch {
-      setError("No se pudo generar el enlace.");
+      mostrarError("No se pudo generar el enlace.");
     }
   }
 
   async function handleAscender(p: PerfilAdmin) {
     if (!confirm(`¿Hacer a ${p.nombres} ${p.apellidos} coordinador de todo el recinto? Deja de estar asignado a su mesa.`))
       return;
-    setError(null);
     try {
       await ascenderACoordinador(p);
       cargar();
+      mostrarExito(`${p.nombres} ahora es coordinador del recinto.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo ascender a coordinador.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo ascender a coordinador.");
     }
   }
 
@@ -183,13 +185,13 @@ export function Veeduria({ rol, perfilId }: Props) {
       )
     )
       return;
-    setError(null);
     try {
       await eliminarPerfil(p.id);
       localStorage.removeItem(claveEnlace(p.id));
       cargar();
+      mostrarExito("Perfil eliminado.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo eliminar.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo eliminar.");
     }
   }
 
@@ -275,7 +277,6 @@ export function Veeduria({ rol, perfilId }: Props) {
           )}
         </div>
 
-        {error && <p className="error">{error}</p>}
         <button disabled={guardando} type="submit">
           {guardando ? "Creando..." : "Agregar"}
         </button>

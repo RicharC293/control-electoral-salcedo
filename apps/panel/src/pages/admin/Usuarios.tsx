@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import { actualizarPerfilActivo, crearPerfil, eliminarPerfil, listarPerfiles, type PerfilAdmin } from "../../lib/admin";
+import { useToast } from "../../lib/toast";
 
 type Props = { rol: "ADMIN" | "AUDITOR"; perfilId: string };
 
 const ROL_LABEL: Record<"AUDITOR" | "ADMIN", string> = { AUDITOR: "Auditor", ADMIN: "Admin" };
 
 export function Usuarios({ rol, perfilId }: Props) {
+  const { mostrarExito, mostrarError } = useToast();
   const [perfiles, setPerfiles] = useState<PerfilAdmin[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -15,7 +17,6 @@ export function Usuarios({ rol, perfilId }: Props) {
   const [rolNuevo, setRolNuevo] = useState<"AUDITOR" | "ADMIN">("AUDITOR");
   const [email, setEmail] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [avisoPassword, setAvisoPassword] = useState<{ email: string; password: string } | null>(null);
 
   function cargar() {
@@ -30,7 +31,6 @@ export function Usuarios({ rol, perfilId }: Props) {
   async function handleCrear(e: React.FormEvent) {
     e.preventDefault();
     setGuardando(true);
-    setError(null);
     setAvisoPassword(null);
     try {
       const { tempPassword } = await crearPerfil({ nombres, apellidos, rol: rolNuevo, email });
@@ -40,7 +40,7 @@ export function Usuarios({ rol, perfilId }: Props) {
       setEmail("");
       cargar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el usuario.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo crear el usuario.");
     } finally {
       setGuardando(false);
     }
@@ -48,16 +48,16 @@ export function Usuarios({ rol, perfilId }: Props) {
 
   async function handleEliminar(p: PerfilAdmin) {
     if (p.id === perfilId) {
-      setError("No puedes eliminar tu propia cuenta.");
+      mostrarError("No puedes eliminar tu propia cuenta.");
       return;
     }
     if (!confirm(`¿Eliminar a ${p.nombres} ${p.apellidos}? No se puede deshacer.`)) return;
-    setError(null);
     try {
       await eliminarPerfil(p.id);
       cargar();
+      mostrarExito("Usuario eliminado.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo eliminar.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo eliminar.");
     }
   }
 
@@ -90,7 +90,6 @@ export function Usuarios({ rol, perfilId }: Props) {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
 
-        {error && <p className="error">{error}</p>}
         {avisoPassword && (
           <p className="aviso-password">
             Cuenta creada: <strong>{avisoPassword.email}</strong> / contraseña temporal:{" "}

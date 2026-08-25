@@ -2,14 +2,15 @@ import { aplicarColorSemilla } from "@control-electoral/domain";
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import { actualizarColorSemilla, obtenerColorSemilla } from "../../lib/config";
+import { useToast } from "../../lib/toast";
 
 const AZUL_POR_DEFECTO = "#0f172a";
 
 export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
+  const { mostrarExito, mostrarError } = useToast();
   const [color, setColor] = useState(AZUL_POR_DEFECTO);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [mensaje, setMensaje] = useState<string | null>(null);
 
   useEffect(() => {
     obtenerColorSemilla()
@@ -24,12 +25,11 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
 
   async function handleGuardar() {
     setGuardando(true);
-    setMensaje(null);
     try {
       await actualizarColorSemilla(color);
-      setMensaje("Guardado. Se aplicará en captura y panel para todos los que entren desde ahora.");
+      mostrarExito("Guardado. Se aplicará en captura y panel para todos los que entren desde ahora.");
     } catch {
-      setMensaje("No se pudo guardar el color.");
+      mostrarError("No se pudo guardar el color.");
     } finally {
       setGuardando(false);
     }
@@ -38,12 +38,11 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   async function handleRestablecer() {
     setColor(AZUL_POR_DEFECTO);
     setGuardando(true);
-    setMensaje(null);
     try {
       await actualizarColorSemilla(null);
-      setMensaje("Restablecido al color por defecto.");
+      mostrarExito("Restablecido al color por defecto.");
     } catch {
-      setMensaje("No se pudo restablecer el color.");
+      mostrarError("No se pudo restablecer el color.");
     } finally {
       setGuardando(false);
     }
@@ -76,8 +75,6 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
             </button>
             <a href="#preview">Enlace de ejemplo</a>
           </div>
-
-          {mensaje && <p>{mensaje}</p>}
 
           <div className="fila-formulario">
             <button disabled={guardando} onClick={handleGuardar}>

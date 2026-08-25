@@ -2,6 +2,7 @@ import { formatearMesa } from "@control-electoral/domain";
 import { useState } from "react";
 import type { CandidateRow, MesaRow, ContestRow } from "../lib/queries";
 import { encolarActa } from "../lib/sync";
+import { useToast } from "../lib/toast";
 
 type Props = {
   mesa: MesaRow;
@@ -12,17 +13,16 @@ type Props = {
 };
 
 export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada }: Props) {
+  const { mostrarError } = useToast();
   const [votos, setVotos] = useState<Record<string, number>>(
     Object.fromEntries(candidatos.map((c) => [c.id, 0]))
   );
   const [blancos, setBlancos] = useState(0);
   const [nulos, setNulos] = useState(0);
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleRegistrar() {
     setGuardando(true);
-    setError(null);
     try {
       // Se guarda primero en la cola local (funciona sin conexión) y se
       // intenta enviar de inmediato en segundo plano -- ver lib/sync.ts.
@@ -36,7 +36,7 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
       });
       onRegistrada();
     } catch {
-      setError("No se pudo guardar en este dispositivo. Intenta de nuevo.");
+      mostrarError("No se pudo guardar en este dispositivo. Intenta de nuevo.");
     } finally {
       setGuardando(false);
     }
@@ -84,8 +84,6 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           onChange={(e) => setNulos(Number(e.target.value))}
         />
       </label>
-
-      {error && <p className="error">{error}</p>}
 
       <button disabled={guardando} onClick={handleRegistrar}>
         {guardando ? "Guardando..." : "Registrar"}

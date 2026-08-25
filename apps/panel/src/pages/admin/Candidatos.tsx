@@ -11,6 +11,7 @@ import {
   type CandidatoAdmin,
   type ContestAdmin,
 } from "../../lib/admin";
+import { useToast } from "../../lib/toast";
 
 // Un punto de partida curado en vez de un selector de color en blanco --
 // ocho tonos que se distinguen bien entre sí en la barra de "Votos por
@@ -19,6 +20,7 @@ import {
 const PALETA_PARTIDOS = ["#1d4ed8", "#b91c1c", "#15803d", "#b45309", "#7c3aed", "#0891b2", "#db2777", "#57534e"];
 
 export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
+  const { mostrarExito, mostrarError } = useToast();
   const [contests, setContests] = useState<ContestAdmin[]>([]);
   const [candidatos, setCandidatos] = useState<CandidatoAdmin[]>([]);
   const [contestId, setContestId] = useState<string>("");
@@ -30,7 +32,6 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   const [color, setColor] = useState<string | null>(null);
   const [colorPersonalizado, setColorPersonalizado] = useState("#1d4ed8");
   const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function cargar() {
     setCargando(true);
@@ -49,7 +50,6 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
     e.preventDefault();
     if (!contestId) return;
     setGuardando(true);
-    setError(null);
     try {
       const orden = candidatos.filter((c) => c.contest_id === contestId).length + 1;
       await crearCandidato({ contestId, nombres, apellidos, partidoNombre: partido, partidoColor: color, orden });
@@ -58,8 +58,9 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       setPartido("");
       setColor(null);
       cargar();
+      mostrarExito("Candidato agregado.");
     } catch {
-      setError("No se pudo crear el candidato.");
+      mostrarError("No se pudo crear el candidato.");
     } finally {
       setGuardando(false);
     }
@@ -71,18 +72,18 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       await subirFotoCandidato(candidateId, archivo);
       cargar();
     } catch {
-      setError("No se pudo subir la foto.");
+      mostrarError("No se pudo subir la foto.");
     }
   }
 
   async function handleEliminar(c: CandidatoAdmin) {
     if (!confirm(`¿Eliminar a ${c.nombres} ${c.apellidos}? Esto no se puede deshacer.`)) return;
-    setError(null);
     try {
       await eliminarCandidato(c.id);
       cargar();
+      mostrarExito("Candidato eliminado.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo eliminar.");
+      mostrarError(err instanceof Error ? err.message : "No se pudo eliminar.");
     }
   }
 
@@ -168,7 +169,6 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
           )}
         </div>
 
-        {error && <p className="error">{error}</p>}
         <button disabled={guardando} type="submit">
           {guardando ? "Guardando..." : "Agregar candidato"}
         </button>

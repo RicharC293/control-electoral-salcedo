@@ -4,21 +4,26 @@ import { Link } from "react-router-dom";
 import { obtenerActas, type ActaListItem } from "../lib/queries";
 import type { PerfilPanel } from "../lib/auth";
 import { cerrarSesion } from "../lib/auth";
+import { useToast } from "../lib/toast";
 import { AdminNav } from "./admin/AdminNav";
 
 type Props = { perfil: PerfilPanel; onSalir: () => void };
 
 export function ActasList({ perfil, onSalir }: Props) {
+  const { mostrarError } = useToast();
   const [actas, setActas] = useState<ActaListItem[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [huboError, setHuboError] = useState(false);
 
   useEffect(() => {
     obtenerActas()
       .then(setActas)
-      .catch((e) => setError(e instanceof Error ? e.message : "Error al cargar actas"))
+      .catch((e) => {
+        setHuboError(true);
+        mostrarError(e instanceof Error ? e.message : "No se pudieron cargar las actas.");
+      })
       .finally(() => setCargando(false));
-  }, []);
+  }, [mostrarError]);
 
   return (
     <div className="contenedor-panel">
@@ -42,9 +47,8 @@ export function ActasList({ perfil, onSalir }: Props) {
       </header>
 
       {cargando && <p>Cargando...</p>}
-      {error && <p className="error">{error}</p>}
 
-      {!cargando && !error && (
+      {!cargando && !huboError && (
         <table className="tabla-actas">
           <thead>
             <tr>

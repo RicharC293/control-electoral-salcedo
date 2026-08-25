@@ -3,6 +3,7 @@ import type { FotoPendiente } from "../lib/db";
 import type { ActaFotoRow } from "../lib/queries";
 import { comprimirFoto, obtenerUrlFirmadaFoto } from "../lib/queries";
 import { encolarFoto } from "../lib/sync";
+import { useToast } from "../lib/toast";
 
 type Props = {
   actaId: string;
@@ -19,8 +20,8 @@ const SYNC_LABEL: Record<string, string> = {
 };
 
 export function PhotoUpload({ actaId, perfilId, fotos, fotoPendiente, onSubida }: Props) {
+  const { mostrarError } = useToast();
   const [comprimiendo, setComprimiendo] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -45,13 +46,12 @@ export function PhotoUpload({ actaId, perfilId, fotos, fotoPendiente, onSubida }
     const archivo = e.target.files?.[0];
     if (!archivo) return;
     setComprimiendo(true);
-    setError(null);
     try {
       const comprimido = await comprimirFoto(archivo);
       await encolarFoto({ actaId, blob: comprimido, uploadedBy: perfilId });
       onSubida();
     } catch {
-      setError("No se pudo procesar la foto. Intenta de nuevo.");
+      mostrarError("No se pudo procesar la foto. Intenta de nuevo.");
     } finally {
       setComprimiendo(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -69,8 +69,6 @@ export function PhotoUpload({ actaId, perfilId, fotos, fotoPendiente, onSubida }
           {SYNC_LABEL[fotoPendiente.syncStatus] ?? fotoPendiente.syncStatus}
         </p>
       )}
-
-      {error && <p className="error">{error}</p>}
 
       <input
         ref={inputRef}

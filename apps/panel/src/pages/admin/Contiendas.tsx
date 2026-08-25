@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import { actualizarContestActivo, listarContests, type ContestAdmin } from "../../lib/admin";
+import { useToast } from "../../lib/toast";
 
 const TIPO_LABEL: Record<string, string> = {
   PREFECTURA: "Prefectura",
@@ -11,6 +12,7 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
+  const { mostrarError } = useToast();
   const [contests, setContests] = useState<ContestAdmin[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -29,6 +31,7 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       await actualizarContestActivo(c.id, !c.activo);
     } catch {
       cargar();
+      mostrarError("No se pudo actualizar la contienda.");
     }
   }
 

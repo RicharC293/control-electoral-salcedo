@@ -1,23 +1,23 @@
 import { useState } from "react";
 import { iniciarSesion } from "../lib/auth";
+import { useToast } from "../lib/toast";
 
 type Props = { onIngreso: () => void };
 
 export function Login({ onIngreso }: Props) {
+  const { mostrarError } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setEnviando(true);
-    setError(null);
     try {
       await iniciarSesion(email, password);
       onIngreso();
     } catch {
-      setError("Correo o contraseña incorrectos.");
+      mostrarError("Correo o contraseña incorrectos.");
     } finally {
       setEnviando(false);
     }
@@ -37,8 +37,6 @@ export function Login({ onIngreso }: Props) {
           Contraseña
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
-
-        {error && <p className="error">{error}</p>}
 
         <button disabled={enviando} type="submit">
           {enviando ? "Ingresando..." : "Ingresar"}

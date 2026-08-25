@@ -19,6 +19,7 @@ import {
   type ContactoRow,
   type FotoRow,
 } from "../lib/auditoria";
+import { useToast } from "../lib/toast";
 
 type Datos = {
   acta: ActaDetalle;
@@ -44,12 +45,12 @@ function describirCampo(campo: string, candidatos: CandidatoRow[]): string {
 }
 
 export function AuditoriaDetail() {
+  const { mostrarExito, mostrarError } = useToast();
   const { id } = useParams<{ id: string }>();
   const [datos, setDatos] = useState<Datos | "cargando" | "error">("cargando");
   const [blancos, setBlancos] = useState(0);
   const [nulos, setNulos] = useState(0);
   const [guardando, setGuardando] = useState(false);
-  const [mensaje, setMensaje] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     if (!id) return;
@@ -86,16 +87,15 @@ export function AuditoriaDetail() {
 
   async function handleGuardar() {
     setGuardando(true);
-    setMensaje(null);
     try {
       await guardarBlancosNulos(acta.id, blancos, nulos);
       for (const c of candidatos) {
         await guardarVotoCandidato(acta.id, c.id, votos[c.id] ?? 0);
       }
-      setMensaje("Cambios guardados.");
       await cargar();
+      mostrarExito("Cambios guardados.");
     } catch {
-      setMensaje("No se pudieron guardar los cambios.");
+      mostrarError("No se pudieron guardar los cambios.");
     } finally {
       setGuardando(false);
     }
@@ -103,12 +103,12 @@ export function AuditoriaDetail() {
 
   async function handleVerificar() {
     setGuardando(true);
-    setMensaje(null);
     try {
       await verificarActa(acta.id);
       await cargar();
+      mostrarExito("Acta verificada.");
     } catch {
-      setMensaje("No se pudo verificar (¿ya está verificada?).");
+      mostrarError("No se pudo verificar (¿ya está verificada?).");
     } finally {
       setGuardando(false);
     }
@@ -172,7 +172,6 @@ export function AuditoriaDetail() {
             <input type="number" min={0} value={nulos} onChange={(e) => setNulos(Number(e.target.value))} />
           </label>
 
-          {mensaje && <p>{mensaje}</p>}
           <button disabled={guardando} onClick={handleGuardar}>
             {guardando ? "Guardando..." : "Guardar correcciones"}
           </button>

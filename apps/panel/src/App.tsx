@@ -12,8 +12,17 @@ import { Candidatos } from "./pages/admin/Candidatos";
 import { Contiendas } from "./pages/admin/Contiendas";
 import { Usuarios } from "./pages/admin/Usuarios";
 import { Veeduria } from "./pages/admin/Veeduria";
+import { ToastProvider } from "./lib/toast";
 
 export default function App() {
+  return (
+    <ToastProvider>
+      <Contenido />
+    </ToastProvider>
+  );
+}
+
+function Contenido() {
   const [perfil, setPerfil] = useState<PerfilPanel | null | "cargando">("cargando");
 
   const cargarPerfil = useCallback(() => {
