@@ -286,3 +286,16 @@ export async function generarEnlaceAcceso(perfil: PerfilAdmin, creadoPor: string
 
   return { url, waUrl };
 }
+
+// ===== Zona de peligro (Apariencia) =====
+export type AccionLimpieza = "VOTOS" | "CANDIDATOS" | "VEEDORES" | "COORDINADORES";
+
+export async function ejecutarLimpieza(accion: AccionLimpieza): Promise<{ eliminados?: number }> {
+  const { data, error } = await supabase.functions.invoke<{ ok?: boolean; eliminados?: number; error?: string }>(
+    "admin-reset",
+    { body: { accion } }
+  );
+  if (error) throw new Error(await extraerMensajeError(error, "No se pudo completar la acción."));
+  if (data?.error) throw new Error(data.error);
+  return { eliminados: data?.eliminados };
+}

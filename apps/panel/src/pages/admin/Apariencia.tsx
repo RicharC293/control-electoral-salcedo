@@ -1,16 +1,55 @@
 import { aplicarColorSemilla } from "@control-electoral/domain";
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
+import { ejecutarLimpieza, type AccionLimpieza } from "../../lib/admin";
 import { actualizarColorSemilla, obtenerColorSemilla } from "../../lib/config";
 import { useToast } from "../../lib/toast";
 
 const AZUL_POR_DEFECTO = "#0f172a";
+
+const PALABRA_CONFIRMACION = "Confirmar";
+
+type AccionPeligro = {
+  accion: AccionLimpieza;
+  etiqueta: string;
+  descripcion: string;
+};
+
+const ACCIONES_PELIGRO: AccionPeligro[] = [
+  {
+    accion: "VOTOS",
+    etiqueta: "Limpiar todos los votos registrados",
+    descripcion:
+      "Borra todas las actas, sus votos, fotos y el historial de correcciones. Candidatos, veedores y coordinadores no se ven afectados.",
+  },
+  {
+    accion: "CANDIDATOS",
+    etiqueta: "Limpiar candidatos",
+    descripcion:
+      "Borra todos los candidatos junto con todas las actas, votos y fotos ya registrados -- un candidato con votos no se puede borrar sin borrar antes esos votos.",
+  },
+  {
+    accion: "VEEDORES",
+    etiqueta: "Limpiar veedores",
+    descripcion:
+      "Borra todos los perfiles de veedor y sus enlaces de acceso. Las actas que ya hayan enviado no se borran, solo pierden la referencia a quién las subió.",
+  },
+  {
+    accion: "COORDINADORES",
+    etiqueta: "Limpiar coordinadores",
+    descripcion:
+      "Borra todos los perfiles de coordinador y sus enlaces de acceso. Las actas que ya hayan enviado no se borran, solo pierden la referencia a quién las subió.",
+  },
+];
 
 export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   const { mostrarExito, mostrarError } = useToast();
   const [color, setColor] = useState(AZUL_POR_DEFECTO);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [accionPendiente, setAccionPendiente] = useState<AccionPeligro | null>(null);
+  const [textoConfirmacion, setTextoConfirmacion] = useState("");
+  const [ejecutando, setEjecutando] = useState(false);
 
   useEffect(() => {
     obtenerColorSemilla()
@@ -45,6 +84,34 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       mostrarError("No se pudo restablecer el color.");
     } finally {
       setGuardando(false);
+    }
+  }
+
+  function abrirConfirmacion(accion: AccionPeligro) {
+    setAccionPendiente(accion);
+    setTextoConfirmacion("");
+  }
+
+  function cerrarConfirmacion() {
+    setAccionPendiente(null);
+    setTextoConfirmacion("");
+  }
+
+  async function handleEjecutarLimpieza() {
+    if (!accionPendiente) return;
+    setEjecutando(true);
+    try {
+      const { eliminados } = await ejecutarLimpieza(accionPendiente.accion);
+      mostrarExito(
+        typeof eliminados === "number"
+          ? `${accionPendiente.etiqueta}: ${eliminados} eliminado(s).`
+          : `${accionPendiente.etiqueta}: hecho.`
+      );
+      cerrarConfirmacion();
+    } catch (err) {
+      mostrarError(err instanceof Error ? err.message : "No se pudo completar la acción.");
+    } finally {
+      setEjecutando(false);
     }
   }
 
@@ -83,6 +150,63 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
             <button disabled={guardando} className="boton-secundario" onClick={handleRestablecer}>
               Restablecer por defecto
             </button>
+          </div>
+        </div>
+      )}
+
+      {rol === "ADMIN" && (
+        <div className="card zona-peligro">
+          <h3>Zona de peligro</h3>
+          <p className="nota-bloqueo">
+            Estas acciones borran datos de la base en producción y no se pueden deshacer. Úsalas solo para
+            reiniciar el sistema antes de un simulacro o del día de la elección.
+          </p>
+          <div className="lista-peligro">
+            {ACCIONES_PELIGRO.map((a) => (
+              <div key={a.accion} className="fila-peligro">
+                <div>
+                  <strong>{a.etiqueta}</strong>
+                  <p>{a.descripcion}</p>
+                </div>
+                <button type="button" className="boton-peligro" onClick={() => abrirConfirmacion(a)}>
+                  {a.etiqueta}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {accionPendiente && (
+        <div className="modal-fondo" onClick={cerrarConfirmacion}>
+          <div className="modal-tarjeta" onClick={(e) => e.stopPropagation()}>
+            <h3>{accionPendiente.etiqueta}</h3>
+            <p>{accionPendiente.descripcion}</p>
+            <p className="modal-advertencia">Esta acción no se puede deshacer.</p>
+            <label className="campo-etiquetado">
+              <span>
+                Escribe <strong>{PALABRA_CONFIRMACION}</strong> para continuar
+              </span>
+              <input
+                autoFocus
+                value={textoConfirmacion}
+                onChange={(e) => setTextoConfirmacion(e.target.value)}
+                placeholder={PALABRA_CONFIRMACION}
+              />
+            </label>
+            <div className="modal-acciones">
+              <button type="button" className="boton-secundario" onClick={cerrarConfirmacion} disabled={ejecutando}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="boton-peligro"
+                disabled={textoConfirmacion !== PALABRA_CONFIRMACION || ejecutando}
+                onClick={handleEjecutarLimpieza}
+              >
+                {ejecutando ? "Ejecutando..." : "Confirmar"}
+              </button>
+            </div>
           </div>
         </div>
       )}
