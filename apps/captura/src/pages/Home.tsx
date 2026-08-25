@@ -28,6 +28,7 @@ import {
 type Estado =
   | { paso: "cargando" }
   | { paso: "sin-acceso" }
+  | { paso: "desactivado" }
   | { paso: "error"; mensaje: string }
   | {
       paso: "listo";
@@ -94,6 +95,10 @@ export function Home() {
 
     try {
       const perfil = await obtenerPerfilActual();
+      if (!perfil.activo) {
+        setEstado({ paso: "desactivado" });
+        return;
+      }
       const mesas = await obtenerMesasAsignadas(perfil);
       if (mesas.length === 0) {
         setEstado({ paso: "error", mensaje: "Tu perfil no tiene una mesa o recinto asignado todavía." });
@@ -164,6 +169,18 @@ export function Home() {
       <div className="pantalla-centrada">
         <h2>Necesitas un enlace de acceso</h2>
         <p>Pide al coordinador o al equipo de campaña que te envíe tu enlace personal por WhatsApp.</p>
+      </div>
+    );
+  }
+
+  if (estado.paso === "desactivado") {
+    return (
+      <div className="pantalla-centrada">
+        <h2>Tu acceso fue desactivado</h2>
+        <p>
+          Si ya enviaste tus actas, ¡gracias por tu labor! Si crees que esto es un error, contacta al equipo de
+          campaña para reactivarlo.
+        </p>
       </div>
     );
   }

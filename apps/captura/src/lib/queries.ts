@@ -7,6 +7,7 @@ export type PerfilRow = {
   rol: "VEEDOR" | "COORDINADOR" | "AUDITOR" | "ADMIN";
   recinto_id: string | null;
   mesa_id: string | null;
+  activo: boolean;
 };
 
 export type MesaRow = {
@@ -47,7 +48,7 @@ export async function obtenerPerfilActual(): Promise<PerfilRow> {
   if (!auth.user) throw new Error("Sin sesión activa.");
   const { data, error } = await supabase
     .from("perfiles")
-    .select("id, nombres, apellidos, rol, recinto_id, mesa_id")
+    .select("id, nombres, apellidos, rol, recinto_id, mesa_id, activo")
     .eq("id", auth.user.id)
     .single();
   if (error) throw error;
