@@ -285,12 +285,3 @@ export async function generarEnlaceAcceso(perfil: PerfilAdmin, creadoPor: string
 
   return { url, waUrl };
 }
-
-export async function revocarTokensDePerfil(perfilId: string): Promise<void> {
-  const { error } = await supabase
-    .from("access_tokens")
-    .update({ revoked_at: new Date().toISOString() })
-    .eq("perfil_id", perfilId)
-    .is("revoked_at", null);
-  if (error) throw error;
-}

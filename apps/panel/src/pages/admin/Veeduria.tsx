@@ -11,11 +11,32 @@ import {
   listarMesasDeRecinto,
   listarPerfiles,
   listarRecintos,
-  revocarTokensDePerfil,
   type MesaOpcion,
   type PerfilAdmin,
   type RecintoOpcion,
 } from "../../lib/admin";
+
+type Enlace = { url: string; waUrl: string };
+
+// El token crudo del enlace nunca se guarda en la base (solo su hash), así
+// que la única forma de que sobreviva a un F5 es guardarlo en este navegador.
+// Si el admin abre el panel en otro equipo, tendrá que generar uno nuevo --
+// el anterior sigue siendo válido, solo deja de estar a la mano acá.
+const claveEnlace = (perfilId: string) => `enlace-acceso:${perfilId}`;
+
+function leerEnlacesGuardados(perfiles: PerfilAdmin[]): Record<string, Enlace> {
+  const resultado: Record<string, Enlace> = {};
+  for (const p of perfiles) {
+    const guardado = localStorage.getItem(claveEnlace(p.id));
+    if (!guardado) continue;
+    try {
+      resultado[p.id] = JSON.parse(guardado) as Enlace;
+    } catch {
+      // ignorar entradas corruptas
+    }
+  }
+  return resultado;
+}
 
 type Props = { rol: "ADMIN" | "AUDITOR"; perfilId: string };
 
@@ -68,6 +89,7 @@ export function Veeduria({ rol, perfilId }: Props) {
   const [conteoMesas, setConteoMesas] = useState<Record<string, number>>({});
   const [mesas, setMesas] = useState<MesaOpcion[]>([]);
   const [ordenarPor, setOrdenarPor] = useState<"recinto" | "cobertura">("recinto");
+  const [filtroRecintoId, setFiltroRecintoId] = useState("");
   const [cargando, setCargando] = useState(true);
 
   const [nombres, setNombres] = useState("");
@@ -85,9 +107,11 @@ export function Veeduria({ rol, perfilId }: Props) {
     setCargando(true);
     Promise.all([listarPerfiles(), listarRecintos(), contarMesasPorRecinto()])
       .then(([p, r, c]) => {
-        setPerfiles(p.filter((perfil) => perfil.rol === "VEEDOR" || perfil.rol === "COORDINADOR"));
+        const veeduria = p.filter((perfil) => perfil.rol === "VEEDOR" || perfil.rol === "COORDINADOR");
+        setPerfiles(veeduria);
         setRecintos(r);
         setConteoMesas(c);
+        setEnlaces(leerEnlacesGuardados(veeduria));
       })
       .finally(() => setCargando(false));
   }
@@ -133,6 +157,7 @@ export function Veeduria({ rol, perfilId }: Props) {
   async function handleGenerarEnlace(p: PerfilAdmin) {
     try {
       const enlace = await generarEnlaceAcceso(p, perfilId);
+      localStorage.setItem(claveEnlace(p.id), JSON.stringify(enlace));
       setEnlaces((prev) => ({ ...prev, [p.id]: enlace }));
     } catch {
       setError("No se pudo generar el enlace.");
@@ -161,6 +186,7 @@ export function Veeduria({ rol, perfilId }: Props) {
     setError(null);
     try {
       await eliminarPerfil(p.id);
+      localStorage.removeItem(claveEnlace(p.id));
       cargar();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo eliminar.");
@@ -182,6 +208,11 @@ export function Veeduria({ rol, perfilId }: Props) {
     }
     return copia;
   }, [resumen, ordenarPor]);
+
+  const resumenVisible = useMemo(
+    () => (filtroRecintoId ? resumenOrdenado.filter((r) => r.recintoId === filtroRecintoId) : resumenOrdenado),
+    [resumenOrdenado, filtroRecintoId]
+  );
 
   return (
     <div className="contenedor-panel">
@@ -250,19 +281,34 @@ export function Veeduria({ rol, perfilId }: Props) {
         </button>
       </form>
 
-      <label className="campo-etiquetado campo-orden">
-        <span>Ordenar por</span>
-        <select value={ordenarPor} onChange={(e) => setOrdenarPor(e.target.value as "recinto" | "cobertura")}>
-          <option value="recinto">Recinto (A-Z)</option>
-          <option value="cobertura">Cobertura (menos cubiertos primero)</option>
-        </select>
-      </label>
+      <div className="veeduria-controles">
+        <label className="campo-etiquetado campo-orden">
+          <span>Filtrar por recinto</span>
+          <select value={filtroRecintoId} onChange={(e) => setFiltroRecintoId(e.target.value)}>
+            <option value="">Todos los recintos</option>
+            {recintos.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+        {!filtroRecintoId && (
+          <label className="campo-etiquetado campo-orden">
+            <span>Ordenar por</span>
+            <select value={ordenarPor} onChange={(e) => setOrdenarPor(e.target.value as "recinto" | "cobertura")}>
+              <option value="recinto">Recinto (A-Z)</option>
+              <option value="cobertura">Cobertura (menos cubiertos primero)</option>
+            </select>
+          </label>
+        )}
+      </div>
 
       {cargando ? (
         <p>Cargando...</p>
       ) : (
         <div className="lista-recintos">
-          {resumenOrdenado.map((r) => (
+          {resumenVisible.map((r) => (
             <div key={r.recintoId} className="recinto-grupo card">
               <div className="recinto-encabezado">
                 <div>
@@ -288,16 +334,16 @@ export function Veeduria({ rol, perfilId }: Props) {
               {r.perfiles.length === 0 ? (
                 <p className="nota-bloqueo">Todavía no hay veedores ni coordinador asignado en este recinto.</p>
               ) : (
-                <table className="tabla-actas">
+                <table className="tabla-actas tabla-veeduria">
                   <thead>
                     <tr>
                       <th>Nombre</th>
                       <th>Rol</th>
                       <th>Mesa</th>
-                      <th>Cédula</th>
-                      <th>Teléfono</th>
-                      <th>Activo</th>
-                      <th>Acciones</th>
+                      <th>Contacto</th>
+                      <th className="col-activo">Activo</th>
+                      <th>Enlace de acceso</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -308,9 +354,11 @@ export function Veeduria({ rol, perfilId }: Props) {
                         </td>
                         <td>{ROL_LABEL[p.rol as "VEEDOR" | "COORDINADOR"]}</td>
                         <td>{p.rol === "VEEDOR" && p.mesas ? formatearMesa(p.mesas) : "Todo el recinto"}</td>
-                        <td>{p.cedula ?? "-"}</td>
-                        <td>{p.telefono ?? "-"}</td>
                         <td>
+                          <span className="contacto-cedula">{p.cedula ?? "-"}</span>
+                          <span className="contacto-telefono">{p.telefono ?? "-"}</span>
+                        </td>
+                        <td className="col-activo">
                           <input
                             type="checkbox"
                             checked={p.activo}
@@ -318,26 +366,29 @@ export function Veeduria({ rol, perfilId }: Props) {
                           />
                         </td>
                         <td>
-                          <div className="acciones-enlace">
+                          {enlaces[p.id] ? (
+                            <div className="acciones-enlace">
+                              <a href={enlaces[p.id].waUrl} target="_blank" rel="noreferrer">
+                                Enviar por WhatsApp
+                              </a>
+                              <button
+                                className="boton-secundario boton-chico"
+                                onClick={() => navigator.clipboard.writeText(enlaces[p.id].url)}
+                              >
+                                Copiar
+                              </button>
+                              <button className="boton-regenerar" onClick={() => handleGenerarEnlace(p)}>
+                                Generar de nuevo
+                              </button>
+                            </div>
+                          ) : (
                             <button className="boton-secundario boton-chico" onClick={() => handleGenerarEnlace(p)}>
                               Generar enlace
                             </button>
-                            {enlaces[p.id] && (
-                              <>
-                                <a href={enlaces[p.id].waUrl} target="_blank" rel="noreferrer">
-                                  Enviar por WhatsApp
-                                </a>
-                                <button
-                                  className="boton-secundario boton-chico"
-                                  onClick={() => navigator.clipboard.writeText(enlaces[p.id].url)}
-                                >
-                                  Copiar enlace
-                                </button>
-                              </>
-                            )}
-                            <button className="boton-secundario boton-chico" onClick={() => revocarTokensDePerfil(p.id)}>
-                              Revocar enlaces
-                            </button>
+                          )}
+                        </td>
+                        <td>
+                          <div className="acciones-perfil">
                             {p.rol === "VEEDOR" && (
                               <button className="boton-secundario boton-chico" onClick={() => handleAscender(p)}>
                                 Ascender a coordinador

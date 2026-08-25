@@ -948,3 +948,47 @@ a {
 .recinto-grupo .nota-bloqueo {
   margin: 12px 0 0;
 }
+
+.veeduria-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tabla-veeduria .col-activo {
+  text-align: center;
+}
+
+.contacto-cedula,
+.contacto-telefono {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.contacto-telefono {
+  color: var(--color-texto-suave);
+}
+
+.boton-regenerar {
+  width: auto;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--color-texto-suave) !important;
+  font-size: 0.78rem;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.boton-regenerar:hover:not(:disabled) {
+  color: var(--color-texto) !important;
+}
+
+.acciones-perfil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
