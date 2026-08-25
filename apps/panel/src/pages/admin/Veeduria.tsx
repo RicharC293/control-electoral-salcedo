@@ -342,8 +342,7 @@ export function Veeduria({ rol, perfilId }: Props) {
                       <th>Mesa</th>
                       <th>Contacto</th>
                       <th className="col-activo">Activo</th>
-                      <th>Enlace de acceso</th>
-                      <th></th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -366,40 +365,39 @@ export function Veeduria({ rol, perfilId }: Props) {
                           />
                         </td>
                         <td>
-                          {enlaces[p.id] ? (
-                            <div className="acciones-enlace">
-                              <a href={enlaces[p.id].waUrl} target="_blank" rel="noreferrer">
-                                Enviar por WhatsApp
-                              </a>
-                              <button
-                                className="boton-secundario boton-chico"
-                                onClick={() => navigator.clipboard.writeText(enlaces[p.id].url)}
-                              >
-                                Copiar
-                              </button>
-                              <button className="boton-regenerar" onClick={() => handleGenerarEnlace(p)}>
-                                Generar de nuevo
+                          <div className="fila-acciones">
+                            <div className="grupo-acciones">
+                              {enlaces[p.id] ? (
+                                <>
+                                  <a className="boton-fila boton-fila-whatsapp" href={enlaces[p.id].waUrl} target="_blank" rel="noreferrer">
+                                    WhatsApp
+                                  </a>
+                                  <button
+                                    className="boton-fila"
+                                    onClick={() => navigator.clipboard.writeText(enlaces[p.id].url)}
+                                  >
+                                    Copiar
+                                  </button>
+                                  <button className="boton-fila" onClick={() => handleGenerarEnlace(p)}>
+                                    Regenerar
+                                  </button>
+                                </>
+                              ) : (
+                                <button className="boton-secundario boton-chico" onClick={() => handleGenerarEnlace(p)}>
+                                  Generar enlace
+                                </button>
+                              )}
+                            </div>
+                            <div className="grupo-acciones grupo-acciones-perfil">
+                              {p.rol === "VEEDOR" && (
+                                <button className="boton-fila" onClick={() => handleAscender(p)}>
+                                  Ascender
+                                </button>
+                              )}
+                              <button className="boton-fila boton-fila-eliminar" onClick={() => handleEliminar(p)}>
+                                Eliminar
                               </button>
                             </div>
-                          ) : (
-                            <button className="boton-secundario boton-chico" onClick={() => handleGenerarEnlace(p)}>
-                              Generar enlace
-                            </button>
-                          )}
-                        </td>
-                        <td>
-                          <div className="acciones-perfil">
-                            {p.rol === "VEEDOR" && (
-                              <button className="boton-secundario boton-chico" onClick={() => handleAscender(p)}>
-                                Ascender a coordinador
-                              </button>
-                            )}
-                            <button
-                              className="boton-secundario boton-chico boton-eliminar"
-                              onClick={() => handleEliminar(p)}
-                            >
-                              Eliminar
-                            </button>
                           </div>
                         </td>
                       </tr>

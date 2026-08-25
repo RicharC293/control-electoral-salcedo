@@ -786,20 +786,6 @@ a {
   border-color: var(--color-error-suave) !important;
 }
 
-.acciones-enlace {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.acciones-enlace a {
-  font-size: 0.85rem;
-  color: var(--color-exito);
-  font-weight: 600;
-  text-underline-offset: 2px;
-}
-
 .boton-chico {
   width: auto;
   padding: 6px 10px;
@@ -969,26 +955,61 @@ a {
   color: var(--color-texto-suave);
 }
 
-.boton-regenerar {
+.fila-acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 4px;
+}
+
+.grupo-acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.grupo-acciones-perfil {
+  margin-left: auto;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-borde);
+}
+
+.boton-fila {
+  display: inline-flex;
+  align-items: center;
   width: auto;
   background: none !important;
   border: none !important;
-  padding: 0 !important;
+  padding: 5px 8px !important;
+  border-radius: var(--radio-chico);
   color: var(--color-texto-suave) !important;
-  font-size: 0.78rem;
-  font-weight: 400;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
+  transition: background-color var(--transicion), color var(--transicion);
 }
 
-.boton-regenerar:hover:not(:disabled) {
+.boton-fila:hover:not(:disabled) {
+  background: var(--color-superficie-alt) !important;
   color: var(--color-texto) !important;
 }
 
-.acciones-perfil {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
+.boton-fila-whatsapp {
+  color: var(--color-exito) !important;
+}
+
+.boton-fila-whatsapp:hover:not(:disabled) {
+  background: var(--color-exito-suave) !important;
+  color: var(--color-exito) !important;
+}
+
+.boton-fila-eliminar {
+  color: var(--color-error) !important;
+}
+
+.boton-fila-eliminar:hover:not(:disabled) {
+  background: var(--color-error-suave) !important;
+  color: var(--color-error) !important;
 }
