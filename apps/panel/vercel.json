@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@control-electoral/panel",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

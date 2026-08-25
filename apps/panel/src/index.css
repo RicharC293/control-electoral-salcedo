@@ -1,0 +1,477 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --azul: #0f172a;
+  --verde: #15803d;
+  --rojo: #b91c1c;
+  --gris: #64748b;
+  --fondo: #f8fafc;
+  --borde: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--azul);
+}
+
+.pantalla-login {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tarjeta-login {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 32px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tarjeta-login h1 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.subtitulo {
+  margin: 0 0 8px;
+  color: var(--gris);
+}
+
+.tarjeta-login label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.tarjeta-login input {
+  padding: 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.tarjeta-login button,
+.contenedor-panel button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--azul);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton-secundario {
+  background: white !important;
+  color: var(--azul) !important;
+  border: 1px solid var(--borde) !important;
+}
+
+.error {
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+.contenedor-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.encabezado-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.encabezado-panel h1 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+}
+
+.encabezado-panel p {
+  margin: 0;
+  color: var(--gris);
+}
+
+.tabla-actas {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tabla-actas th,
+.tabla-actas td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.estado-enviada {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.estado-verificada {
+  background: #dcfce7;
+  color: var(--verde);
+}
+
+.estado-rechazada {
+  background: #fee2e2;
+  color: var(--rojo);
+}
+
+.volver {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--gris);
+  text-decoration: none;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.auditoria-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.auditoria-foto img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+}
+
+.campo-voto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.campo-voto input {
+  width: 90px;
+  padding: 6px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  text-align: right;
+}
+
+.nota-bloqueo {
+  color: var(--gris);
+}
+
+.lista-cambios {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.lista-cambios li {
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.selector-contiendas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.chip-contienda {
+  width: auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: white;
+  color: var(--azul);
+  border: 1px solid var(--borde);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chip-activa {
+  background: var(--azul);
+  color: white;
+  border-color: var(--azul);
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-tile {
+  background: white;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--gris);
+}
+
+.kpi-valor {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.kpi-valor-chica {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.graficos-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.lista-parroquias {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lista-parroquias li {
+  margin-bottom: 14px;
+}
+
+.parroquia-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.parroquia-fila span:last-child {
+  color: var(--gris);
+}
+
+.barra-progreso {
+  position: relative;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barra-progreso-recibidas {
+  position: absolute;
+  inset: 0;
+  background: #93c5fd;
+  border-radius: 999px;
+}
+
+.barra-progreso-verificadas {
+  position: absolute;
+  inset: 0;
+  background: var(--verde);
+  border-radius: 999px;
+}
+
+.barras-candidatos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.barras-candidatos li {
+  margin-bottom: 16px;
+}
+
+.barra-candidato-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.barra-candidato-fila em {
+  color: var(--gris);
+  font-style: normal;
+  font-size: 0.8em;
+}
+
+.barra-candidato-track {
+  height: 14px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barra-candidato-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.admin-nav a {
+  color: var(--gris);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.admin-nav a.active {
+  color: var(--azul);
+}
+
+.formulario-candidato {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.fila-formulario {
+  display: flex;
+  gap: 10px;
+}
+
+.fila-formulario input,
+.fila-formulario select,
+.formulario-candidato > input,
+.formulario-candidato > select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.formulario-candidato button {
+  align-self: flex-start;
+  padding: 10px 20px;
+}
+
+.aviso-password {
+  background: #fef9c3;
+  border: 1px solid #eab308;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.lista-candidatos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.candidato-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.candidato-foto {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.candidato-foto-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gris);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.candidato-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.subir-foto-candidato {
+  color: var(--azul);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.check-activo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.acciones-enlace {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.acciones-enlace a {
+  font-size: 0.85rem;
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.boton-chico {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
