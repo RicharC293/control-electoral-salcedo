@@ -56,9 +56,10 @@ export function ActaReadOnlyCard({
 
   return (
     <div className="card card-solo-lectura">
-      <h3>
-        {formatearMesa(mesa)} — {contest.nombre}
-      </h3>
+      <p className="etiqueta-mesa">
+        {mesa.recinto_nombre} · {formatearMesa(mesa)}
+      </p>
+      <h3>{contest.nombre}</h3>
 
       {syncPendiente ? (
         <div className="pill-sync-wrap">

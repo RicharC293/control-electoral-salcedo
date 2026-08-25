@@ -44,9 +44,10 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
 
   return (
     <div className="card">
-      <h3>
-        {formatearMesa(mesa)} — {contest.nombre}
-      </h3>
+      <p className="etiqueta-mesa">
+        {mesa.recinto_nombre} · {formatearMesa(mesa)}
+      </p>
+      <h3>{contest.nombre}</h3>
 
       {candidatos.map((c) => (
         <label key={c.id} className="campo-voto">

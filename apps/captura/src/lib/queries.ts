@@ -9,7 +9,13 @@ export type PerfilRow = {
   mesa_id: string | null;
 };
 
-export type MesaRow = { id: string; numero_mesa: number; recinto_id: string; numero_junta_oficial: string | null };
+export type MesaRow = {
+  id: string;
+  numero_mesa: number;
+  recinto_id: string;
+  recinto_nombre: string;
+  numero_junta_oficial: string | null;
+};
 export type ParroquiaRow = { id: string; nombre: string; es_urbana: boolean };
 export type ContestRow = {
   id: string;
@@ -48,23 +54,35 @@ export async function obtenerPerfilActual(): Promise<PerfilRow> {
   return data as PerfilRow;
 }
 
+function mapearMesas(
+  data: { id: string; numero_mesa: number; recinto_id: string; numero_junta_oficial: string | null; recintos: { nombre: string } }[]
+): MesaRow[] {
+  return data.map((m) => ({
+    id: m.id,
+    numero_mesa: m.numero_mesa,
+    recinto_id: m.recinto_id,
+    recinto_nombre: m.recintos.nombre,
+    numero_junta_oficial: m.numero_junta_oficial,
+  }));
+}
+
 export async function obtenerMesasAsignadas(perfil: PerfilRow): Promise<MesaRow[]> {
   if (perfil.rol === "VEEDOR" && perfil.mesa_id) {
     const { data, error } = await supabase
       .from("mesas")
-      .select("id, numero_mesa, recinto_id, numero_junta_oficial")
+      .select("id, numero_mesa, recinto_id, numero_junta_oficial, recintos ( nombre )")
       .eq("id", perfil.mesa_id);
     if (error) throw error;
-    return data as MesaRow[];
+    return mapearMesas(data as unknown as Parameters<typeof mapearMesas>[0]);
   }
   if (perfil.rol === "COORDINADOR" && perfil.recinto_id) {
     const { data, error } = await supabase
       .from("mesas")
-      .select("id, numero_mesa, recinto_id, numero_junta_oficial")
+      .select("id, numero_mesa, recinto_id, numero_junta_oficial, recintos ( nombre )")
       .eq("recinto_id", perfil.recinto_id)
       .order("numero_mesa");
     if (error) throw error;
-    return data as MesaRow[];
+    return mapearMesas(data as unknown as Parameters<typeof mapearMesas>[0]);
   }
   return [];
 }

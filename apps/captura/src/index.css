@@ -149,6 +149,13 @@ body {
   letter-spacing: -0.01em;
 }
 
+.etiqueta-mesa {
+  margin: 0 0 4px;
+  color: var(--color-texto-suave);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .campo-voto {
   display: flex;
   justify-content: space-between;
