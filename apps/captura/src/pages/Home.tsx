@@ -48,6 +48,7 @@ export function Home() {
   const [estado, setEstado] = useState<Estado>({ paso: "cargando" });
   const [actasPendientes, setActasPendientes] = useState<ActaPendiente[]>([]);
   const [fotosPendientes, setFotosPendientes] = useState<FotoPendiente[]>([]);
+  const [recintoActivo, setRecintoActivo] = useState<string>("");
 
   // Cola local reactiva: cualquier cambio que haga lib/sync.ts (al encolar o
   // al confirmar/fallar un envío) se refleja acá sin necesidad de recargar.
@@ -141,6 +142,15 @@ export function Home() {
     cargar();
   }, [cargar]);
 
+  // Si el recinto activo ya no existe entre las mesas asignadas (o todavía
+  // no se eligió ninguno), cae al primero -- así funciona igual con 1 recinto
+  // (caso normal hoy) que con varios (cuando un coordinador cubra más de uno).
+  useEffect(() => {
+    if (estado.paso !== "listo" || estado.mesas.length === 0) return;
+    const primerRecinto = estado.mesas[0]!.recinto_id;
+    setRecintoActivo((actual) => (estado.mesas.some((m) => m.recinto_id === actual) ? actual : primerRecinto));
+  }, [estado]);
+
   if (estado.paso === "cargando") {
     return (
       <div className="pantalla-centrada">
@@ -172,6 +182,23 @@ export function Home() {
   const actaServidorPorClave = new Map(actas.map((a) => [claveMesaContest(a.mesa_id, a.contest_id), a]));
   const actaLocalPorClave = new Map(actasPendientes.map((a) => [claveMesaContest(a.mesaId, a.contestId), a]));
 
+  // Agrupa las mesas asignadas por recinto -- con un solo recinto (el caso de
+  // hoy) esto no cambia nada visible; en cuanto alguien cubra más de uno, el
+  // selector aparece y solo se muestran las mesas del recinto elegido, en vez
+  // de apilar todo verticalmente.
+  const recintos: { recintoId: string; nombre: string; mesas: MesaRow[] }[] = [];
+  const indicePorRecinto = new Map<string, number>();
+  for (const mesa of mesas) {
+    let indice = indicePorRecinto.get(mesa.recinto_id);
+    if (indice === undefined) {
+      indice = recintos.length;
+      indicePorRecinto.set(mesa.recinto_id, indice);
+      recintos.push({ recintoId: mesa.recinto_id, nombre: mesa.recinto_nombre, mesas: [] });
+    }
+    recintos[indice]!.mesas.push(mesa);
+  }
+  const mesasVisibles = recintos.find((r) => r.recintoId === recintoActivo)?.mesas ?? mesas;
+
   return (
     <main className="contenedor">
       <header className="encabezado">
@@ -181,7 +208,20 @@ export function Home() {
         </p>
       </header>
 
-      {mesas.map((mesa) =>
+      {recintos.length > 1 && (
+        <label className="selector-recinto">
+          <span>Recinto</span>
+          <select value={recintoActivo} onChange={(e) => setRecintoActivo(e.target.value)}>
+            {recintos.map((r) => (
+              <option key={r.recintoId} value={r.recintoId}>
+                {r.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {mesasVisibles.map((mesa) =>
         contests.map((contest) => {
           const clave = claveMesaContest(mesa.id, contest.id);
           const candidatosContest = candidatos.filter((c) => c.contest_id === contest.id);

@@ -156,6 +156,40 @@ body {
   font-weight: 600;
 }
 
+.selector-recinto {
+  display: block;
+  margin: 0 0 18px;
+}
+
+.selector-recinto span {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-texto-suave);
+  margin-bottom: 5px;
+}
+
+.selector-recinto select {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.selector-recinto select:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.selector-recinto select:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
+}
+
 .campo-voto {
   display: flex;
   justify-content: space-between;
