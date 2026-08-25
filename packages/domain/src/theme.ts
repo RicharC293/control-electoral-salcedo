@@ -30,6 +30,14 @@ function mezclar(rgb: [number, number, number], hacia: [number, number, number],
 
 const HEX_VALIDO = /^#[0-9a-fA-F]{6}$/;
 
+// Reutilizado fuera de este módulo (p.ej. la paleta de color de candidato en
+// Candidatos.tsx) para generar un fondo tenue a partir de un color arbitrario
+// elegido por el usuario, con el mismo criterio que el color semilla.
+export function tintarColor(hex: string, cantidadHaciaBlanco = 0.88): string {
+  if (!HEX_VALIDO.test(hex)) return hex;
+  return rgbAHex(mezclar(hexARgb(hex), [255, 255, 255], cantidadHaciaBlanco));
+}
+
 export function aplicarColorSemilla(colorSemilla: string | null | undefined): void {
   if (typeof document === "undefined") return; // no-op en scripts/servidor
   const base = colorSemilla && HEX_VALIDO.test(colorSemilla) ? colorSemilla : AZUL_POR_DEFECTO;
