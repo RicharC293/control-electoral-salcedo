@@ -7,16 +7,25 @@ export type ContestAdmin = {
   nombre: string;
   parroquia_id: string | null;
   activo: boolean;
+  numero_dignidades: number;
 };
 
 export async function listarContests(): Promise<ContestAdmin[]> {
-  const { data, error } = await supabase.from("contests").select("id, tipo, nombre, parroquia_id, activo").order("tipo");
+  const { data, error } = await supabase
+    .from("contests")
+    .select("id, tipo, nombre, parroquia_id, activo, numero_dignidades")
+    .order("tipo");
   if (error) throw error;
   return data as ContestAdmin[];
 }
 
 export async function actualizarContestActivo(id: string, activo: boolean): Promise<void> {
   const { error } = await supabase.from("contests").update({ activo }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function actualizarNumeroDignidades(id: string, numeroDignidades: number): Promise<void> {
+  const { error } = await supabase.from("contests").update({ numero_dignidades: numeroDignidades }).eq("id", id);
   if (error) throw error;
 }
 
@@ -287,7 +296,7 @@ export async function generarEnlaceAcceso(perfil: PerfilAdmin, creadoPor: string
   return { url, waUrl };
 }
 
-// ===== Zona de peligro (Apariencia) =====
+// ===== Zona de peligro (Configuraciones) =====
 export type AccionLimpieza = "VOTOS" | "CANDIDATOS" | "VEEDORES" | "COORDINADORES";
 
 export async function ejecutarLimpieza(accion: AccionLimpieza): Promise<{ eliminados?: number }> {

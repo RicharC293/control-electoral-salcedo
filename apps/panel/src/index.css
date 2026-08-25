@@ -1173,3 +1173,60 @@ a {
 .modal-acciones button {
   width: auto;
 }
+
+.campo-metodo-reparto {
+  max-width: 320px;
+}
+
+.campo-metodo-reparto select {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.input-dignidades {
+  width: 64px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.input-dignidades:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.input-dignidades:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
+}
+
+.proyeccion-escanos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  background: var(--color-primario-suave);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  font-size: 0.88rem;
+}
+
+.proyeccion-escanos strong {
+  font-weight: 700;
+}
+
+.proyeccion-escanos-item {
+  white-space: nowrap;
+}
+
+.proyeccion-escanos-extra {
+  color: var(--color-exito);
+  font-weight: 700;
+}

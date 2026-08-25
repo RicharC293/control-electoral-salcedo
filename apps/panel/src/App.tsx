@@ -7,8 +7,8 @@ import { ActasList } from "./pages/ActasList";
 import { AuditoriaDetail } from "./pages/AuditoriaDetail";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
-import { Apariencia } from "./pages/admin/Apariencia";
 import { Candidatos } from "./pages/admin/Candidatos";
+import { Configuraciones } from "./pages/admin/Configuraciones";
 import { Contiendas } from "./pages/admin/Contiendas";
 import { Usuarios } from "./pages/admin/Usuarios";
 import { Veeduria } from "./pages/admin/Veeduria";
@@ -62,7 +62,7 @@ function Contenido() {
             <Route path="/admin/candidatos" element={<Candidatos rol={perfil.rol} />} />
             <Route path="/admin/veeduria" element={<Veeduria rol={perfil.rol} perfilId={perfil.id} />} />
             <Route path="/admin/usuarios" element={<Usuarios rol={perfil.rol} perfilId={perfil.id} />} />
-            <Route path="/admin/apariencia" element={<Apariencia rol={perfil.rol} />} />
+            <Route path="/admin/configuraciones" element={<Configuraciones rol={perfil.rol} />} />
           </>
         ) : (
           <Route path="/admin/*" element={<Navigate to="/" replace />} />

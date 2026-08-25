@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AdminNav } from "./AdminNav";
-import { actualizarContestActivo, listarContests, type ContestAdmin } from "../../lib/admin";
+import { actualizarContestActivo, actualizarNumeroDignidades, listarContests, type ContestAdmin } from "../../lib/admin";
 import { useToast } from "../../lib/toast";
 
 const TIPO_LABEL: Record<string, string> = {
@@ -35,13 +36,29 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
     }
   }
 
+  async function guardarDignidades(c: ContestAdmin, valor: number) {
+    if (!Number.isInteger(valor) || valor < 1) {
+      cargar();
+      return;
+    }
+    setContests((prev) => prev.map((x) => (x.id === c.id ? { ...x, numero_dignidades: valor } : x)));
+    try {
+      await actualizarNumeroDignidades(c.id, valor);
+    } catch {
+      cargar();
+      mostrarError("No se pudo actualizar el número de dignidades.");
+    }
+  }
+
   return (
     <div className="contenedor-panel">
       <AdminNav rol={rol} />
       <h1>Contiendas</h1>
       <p className="nota-bloqueo">
         Habilita o deshabilita qué contiendas se controlan. Al desactivar una, desaparece del selector del
-        dashboard y del formulario de captura para las mesas que le aplican.
+        dashboard y del formulario de captura para las mesas que le aplican. En Concejal Urbano/Rural y Junta
+        Parroquial, el número de dignidades determina cuántos escaños se reparten con el método configurado en{" "}
+        <Link to="/admin/configuraciones">Configuraciones</Link>.
       </p>
 
       {cargando ? (
@@ -52,6 +69,7 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
             <tr>
               <th>Tipo</th>
               <th>Nombre</th>
+              <th>Dignidades</th>
               <th>Activa</th>
             </tr>
           </thead>
@@ -60,6 +78,19 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
               <tr key={c.id}>
                 <td>{TIPO_LABEL[c.tipo] ?? c.tipo}</td>
                 <td>{c.nombre}</td>
+                <td>
+                  <input
+                    type="number"
+                    min={1}
+                    key={`${c.id}-${c.numero_dignidades}`}
+                    defaultValue={c.numero_dignidades}
+                    className="input-dignidades"
+                    onBlur={(e) => {
+                      const valor = Number(e.target.value);
+                      if (valor !== c.numero_dignidades) guardarDignidades(c, valor);
+                    }}
+                  />
+                </td>
                 <td>
                   <input type="checkbox" checked={c.activo} onChange={() => toggle(c)} />
                 </td>

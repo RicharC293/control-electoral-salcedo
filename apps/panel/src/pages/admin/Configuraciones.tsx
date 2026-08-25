@@ -1,8 +1,13 @@
-import { aplicarColorSemilla } from "@control-electoral/domain";
+import { aplicarColorSemilla, type MetodoReparto } from "@control-electoral/domain";
 import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import { ejecutarLimpieza, type AccionLimpieza } from "../../lib/admin";
-import { actualizarColorSemilla, obtenerColorSemilla } from "../../lib/config";
+import {
+  actualizarColorSemilla,
+  actualizarMetodoReparto,
+  obtenerColorSemilla,
+  obtenerMetodoReparto,
+} from "../../lib/config";
 import { useToast } from "../../lib/toast";
 
 const AZUL_POR_DEFECTO = "#0f172a";
@@ -42,18 +47,23 @@ const ACCIONES_PELIGRO: AccionPeligro[] = [
   },
 ];
 
-export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
+export function Configuraciones({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   const { mostrarExito, mostrarError } = useToast();
   const [color, setColor] = useState(AZUL_POR_DEFECTO);
+  const [metodoReparto, setMetodoReparto] = useState<MetodoReparto>("DHONT");
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [guardandoMetodo, setGuardandoMetodo] = useState(false);
   const [accionPendiente, setAccionPendiente] = useState<AccionPeligro | null>(null);
   const [textoConfirmacion, setTextoConfirmacion] = useState("");
   const [ejecutando, setEjecutando] = useState(false);
 
   useEffect(() => {
-    obtenerColorSemilla()
-      .then((c) => setColor(c ?? AZUL_POR_DEFECTO))
+    Promise.all([obtenerColorSemilla(), obtenerMetodoReparto()])
+      .then(([c, m]) => {
+        setColor(c ?? AZUL_POR_DEFECTO);
+        setMetodoReparto(m);
+      })
       .finally(() => setCargando(false));
   }, []);
 
@@ -84,6 +94,21 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       mostrarError("No se pudo restablecer el color.");
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function handleCambiarMetodo(metodo: MetodoReparto) {
+    const anterior = metodoReparto;
+    setMetodoReparto(metodo);
+    setGuardandoMetodo(true);
+    try {
+      await actualizarMetodoReparto(metodo);
+      mostrarExito("Método de reparto actualizado.");
+    } catch {
+      setMetodoReparto(anterior);
+      mostrarError("No se pudo actualizar el método de reparto.");
+    } finally {
+      setGuardandoMetodo(false);
     }
   }
 
@@ -118,7 +143,7 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   return (
     <div className="contenedor-panel">
       <AdminNav rol={rol} />
-      <h1>Apariencia</h1>
+      <h1>Configuraciones</h1>
       <p className="nota-bloqueo">
         El color semilla es el color de marca principal (botones, enlaces activos, acentos) en{" "}
         <strong>captura</strong> y <strong>panel</strong>. El resto de la paleta (verde de éxito, rojo de
@@ -151,6 +176,28 @@ export function Apariencia({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
               Restablecer por defecto
             </button>
           </div>
+        </div>
+      )}
+
+      {!cargando && (
+        <div className="card">
+          <h3>Método de reparto de escaños</h3>
+          <p className="nota-bloqueo">
+            Se usa para proyectar cuántos escaños gana cada lista en Concejal Urbano, Concejal Rural y Junta
+            Parroquial (el número de dignidades a elegir se configura por contienda en{" "}
+            <strong>Contiendas</strong>). No afecta a Alcaldía ni Prefectura, que siempre elige un solo ganador.
+          </p>
+          <label className="campo-etiquetado campo-metodo-reparto">
+            <span>Método</span>
+            <select
+              value={metodoReparto}
+              disabled={guardandoMetodo}
+              onChange={(e) => handleCambiarMetodo(e.target.value as MetodoReparto)}
+            >
+              <option value="DHONT">D'Hondt</option>
+              <option value="WEBSTER">Webster (Sainte-Laguë)</option>
+            </select>
+          </label>
         </div>
       )}
 

@@ -3,7 +3,7 @@
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Color semilla (marca) -- lib/theme.ts lo sobreescribe al arrancar si hay
-     uno configurado en Admin → Apariencia. Estos son el valor por defecto,
+     uno configurado en Admin → Configuraciones. Estos son el valor por defecto,
      duplicados aquí (no derivados de la variable JS) para que no haya un
      flash de otro color antes de que corra ese script. */
   --color-primario: #0f172a;

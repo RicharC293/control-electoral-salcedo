@@ -8,6 +8,7 @@ export type ConfianzaContest = {
   actas_recibidas: number;
   actas_verificadas: number;
   confianza_pct: number | null;
+  numero_dignidades: number;
 };
 
 export type ConfianzaParroquia = {

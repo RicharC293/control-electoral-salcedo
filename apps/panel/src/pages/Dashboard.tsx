@@ -1,7 +1,9 @@
+import { calcularEscanos } from "@control-electoral/domain";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { PerfilPanel } from "../lib/auth";
 import { cerrarSesion } from "../lib/auth";
+import { obtenerMetodoReparto } from "../lib/config";
 import { AdminNav } from "./admin/AdminNav";
 import {
   obtenerActasDeContest,
@@ -53,6 +55,7 @@ export function Dashboard({ perfil, onSalir }: Props) {
   const [votos, setVotos] = useState<VotoCandidato[]>([]);
   const [actas, setActas] = useState<ActaResumen[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [metodoReparto, setMetodoReparto] = useState<"DHONT" | "WEBSTER">("DHONT");
 
   const cargarBase = useCallback(async () => {
     const [c, p] = await Promise.all([obtenerConfianzaContests(), obtenerConfianzaParroquias()]);
@@ -64,6 +67,10 @@ export function Dashboard({ perfil, onSalir }: Props) {
   useEffect(() => {
     cargarBase();
   }, [cargarBase]);
+
+  useEffect(() => {
+    obtenerMetodoReparto().then(setMetodoReparto);
+  }, []);
 
   const cargarContest = useCallback(async (id: string) => {
     setCargando(true);
@@ -101,6 +108,30 @@ export function Dashboard({ perfil, onSalir }: Props) {
   }, [votos, actas]);
 
   const tendencia = useMemo(() => construirTendencia(actas), [actas]);
+
+  // Cada "candidato" en estas contiendas representa a toda su lista/partido
+  // (así se definió a propósito, para no romper el esquema con candidatos
+  // individuales) -- sus votos ya son el total del partido, listos para
+  // repartir. Se recalcula con cada acta nueva que llega, aunque todavía no
+  // esté verificada: es una proyección de tendencia, no el resultado oficial.
+  const proyeccionEscanos = useMemo(() => {
+    // Con todos los candidatos en 0 votos, D'Hondt/Webster igual reparten los
+    // escaños (empate exacto, gana el orden de la lista) -- eso confundiría
+    // más de lo que ayuda, así que no se proyecta nada hasta que haya votos.
+    if (!contest || contest.numero_dignidades <= 1 || !votos.some((v) => v.votos > 0)) return [];
+    const resultado = calcularEscanos(
+      votos.map((v) => ({ candidateId: v.candidateId, votos: v.votos })),
+      contest.numero_dignidades,
+      metodoReparto
+    );
+    return resultado
+      .map((r) => ({
+        partidoNombre: votos.find((v) => v.candidateId === r.candidateId)?.partidoNombre ?? "",
+        escanos: r.escanos,
+      }))
+      .filter((r) => r.escanos > 0)
+      .sort((a, b) => b.escanos - a.escanos);
+  }, [contest, votos, metodoReparto]);
 
   return (
     <div className="contenedor-panel">
@@ -163,6 +194,25 @@ export function Dashboard({ perfil, onSalir }: Props) {
               <span className="kpi-valor kpi-valor-chica">{new Date().toLocaleTimeString("es-EC")}</span>
             </div>
           </div>
+
+          {contest.numero_dignidades > 1 && (
+            <div className="proyeccion-escanos">
+              <strong>
+                Proyección de escaños ({contest.numero_dignidades}
+                {contest.numero_dignidades === 1 ? " dignidad" : " dignidades"}):
+              </strong>
+              {proyeccionEscanos.length === 0 ? (
+                <span>Todavía no hay votos suficientes para proyectar.</span>
+              ) : (
+                proyeccionEscanos.map((p) => (
+                  <span key={p.partidoNombre} className="proyeccion-escanos-item">
+                    {p.partidoNombre} — {p.escanos} {p.escanos === 1 ? "escaño" : "escaños"}
+                    {p.escanos > 1 && <span className="proyeccion-escanos-extra"> (+{p.escanos - 1})</span>}
+                  </span>
+                ))
+              )}
+            </div>
+          )}
 
           <div className="graficos-grid">
             <div className="card">
