@@ -179,6 +179,12 @@ export async function obtenerVotosDeActas(actaIds: string[]): Promise<ActaVotoRo
   return data as ActaVotoRow[];
 }
 
+export async function obtenerColorSemilla(): Promise<string | null> {
+  const { data, error } = await supabase.from("configuracion").select("color_semilla").single();
+  if (error) return null;
+  return data?.color_semilla ?? null;
+}
+
 export async function obtenerConfiguracion(): Promise<{ soporte_telefono: string | null; soporte_mensaje: string | null }> {
   const { data, error } = await supabase
     .from("configuracion")

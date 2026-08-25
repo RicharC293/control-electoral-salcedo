@@ -1,12 +1,45 @@
 :root {
   color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --azul: #0f172a;
-  --verde: #15803d;
-  --rojo: #b91c1c;
-  --gris: #64748b;
-  --fondo: #f8fafc;
-  --borde: #e2e8f0;
+
+  /* Color semilla (marca) -- lib/config.ts + Admin → Apariencia lo
+     sobreescribe al arrancar. Valor por defecto duplicado acá para que no
+     haya flash de otro color antes de que corra ese script. */
+  --color-primario: #0f172a;
+  --color-primario-hover: #262f3d;
+  --color-primario-suave: #eceef2;
+  --color-primario-rgb: 15 23 42;
+
+  /* Semánticos -- no cambian con el color semilla */
+  --color-exito: #15803d;
+  --color-exito-suave: #dcfce7;
+  --color-error: #b91c1c;
+  --color-error-suave: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-suave: #dbeafe;
+
+  /* Neutros */
+  --color-texto: #0f172a;
+  --color-texto-suave: #64748b;
+  --color-borde: #e2e8f0;
+  --color-fondo: #f8fafc;
+  --color-superficie: #ffffff;
+  --color-superficie-alt: #f1f5f9;
+
+  /* Alias de compatibilidad con nombres usados en todo el CSS existente */
+  --azul: var(--color-primario);
+  --verde: var(--color-exito);
+  --rojo: var(--color-error);
+  --gris: var(--color-texto-suave);
+  --fondo: var(--color-fondo);
+  --borde: var(--color-borde);
+
+  --sombra-suave: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.07);
+  --sombra-media: 0 8px 24px rgb(15 23 42 / 0.10), 0 2px 6px rgb(15 23 42 / 0.06);
+  --anillo-foco: 0 0 0 3px rgb(var(--color-primario-rgb) / 0.28);
+  --radio: 12px;
+  --radio-chico: 8px;
+  --transicion: 150ms ease-out;
 }
 
 * {
@@ -15,8 +48,41 @@
 
 body {
   margin: 0;
-  background: var(--fondo);
-  color: var(--azul);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-primario-suave);
+  color: var(--color-texto);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-texto-suave);
+  border-radius: 999px;
+  opacity: 0.4;
+}
+
+* {
+  scrollbar-color: var(--color-texto-suave) transparent;
+  scrollbar-width: thin;
+}
+
+a {
+  color: var(--color-primario);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+  border-radius: var(--radio-chico);
 }
 
 .pantalla-login {
@@ -27,9 +93,10 @@ body {
 }
 
 .tarjeta-login {
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-media);
   padding: 32px;
   width: 320px;
   display: flex;
@@ -40,11 +107,12 @@ body {
 .tarjeta-login h1 {
   font-size: 1.15rem;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .subtitulo {
   margin: 0 0 8px;
-  color: var(--gris);
+  color: var(--color-texto-suave);
 }
 
 .tarjeta-login label {
@@ -55,32 +123,62 @@ body {
 }
 
 .tarjeta-login input {
-  padding: 10px;
-  border: 1px solid var(--borde);
-  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
   font-size: 1rem;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta-login input:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.tarjeta-login input:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
 }
 
 .tarjeta-login button,
 .contenedor-panel button {
   padding: 12px;
   border: none;
-  border-radius: 8px;
-  background: var(--azul);
+  border-radius: var(--radio-chico);
+  background: var(--color-primario);
   color: white;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color var(--transicion), box-shadow var(--transicion);
+}
+
+.tarjeta-login button:hover:not(:disabled),
+.contenedor-panel button:hover:not(:disabled) {
+  background: var(--color-primario-hover);
+}
+
+.tarjeta-login button:disabled,
+.contenedor-panel button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .boton-secundario {
-  background: white !important;
-  color: var(--azul) !important;
-  border: 1px solid var(--borde) !important;
+  background: var(--color-superficie) !important;
+  color: var(--color-texto) !important;
+  border: 1px solid var(--color-borde) !important;
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background: var(--color-superficie-alt) !important;
+  border-color: var(--color-texto-suave) !important;
 }
 
 .error {
-  color: var(--rojo);
+  color: var(--color-error);
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .contenedor-panel {
@@ -93,75 +191,113 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .encabezado-panel h1 {
   margin: 0 0 4px;
   font-size: 1.3rem;
+  letter-spacing: -0.01em;
 }
 
 .encabezado-panel p {
   margin: 0;
-  color: var(--gris);
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
 }
 
 .tabla-actas {
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-suave);
   overflow: hidden;
 }
 
-.tabla-actas th,
+.tabla-actas th {
+  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-borde);
+  background: var(--color-superficie-alt);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-texto-suave);
+  font-weight: 600;
+}
+
 .tabla-actas td {
   text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--borde);
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 0.92rem;
+}
+
+.tabla-actas tbody tr {
+  transition: background-color var(--transicion);
+}
+
+.tabla-actas tbody tr:hover {
+  background: var(--color-superficie-alt);
+}
+
+.tabla-actas tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .estado {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .estado-enviada {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-info-suave);
+  color: var(--color-info);
 }
 
 .estado-verificada {
-  background: #dcfce7;
-  color: var(--verde);
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
 }
 
 .estado-rechazada {
-  background: #fee2e2;
-  color: var(--rojo);
+  background: var(--color-error-suave);
+  color: var(--color-error);
 }
 
 .volver {
   display: inline-block;
   margin-bottom: 16px;
-  color: var(--gris);
+  color: var(--color-texto-suave);
   text-decoration: none;
+  font-size: 0.9rem;
+  transition: color var(--transicion);
+}
+
+.volver:hover {
+  color: var(--color-texto);
 }
 
 .card {
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  padding: 16px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-suave);
+  padding: 18px;
   margin-bottom: 16px;
 }
 
 .card h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .auditoria-grid {
@@ -173,8 +309,9 @@ body {
 
 .auditoria-foto img {
   width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  border: 1px solid var(--color-borde);
+  box-shadow: var(--sombra-suave);
 }
 
 .campo-voto {
@@ -182,20 +319,38 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--borde);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.campo-voto:last-of-type {
+  border-bottom: none;
 }
 
 .campo-voto input {
   width: 90px;
-  padding: 6px;
-  border: 1px solid var(--borde);
+  padding: 7px 9px;
+  border: 1px solid var(--color-borde);
   border-radius: 6px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.campo-voto input:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.campo-voto input:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
 }
 
 .nota-bloqueo {
-  color: var(--gris);
+  color: var(--color-texto-suave);
+  line-height: 1.5;
 }
 
 .lista-cambios {
@@ -219,18 +374,23 @@ body {
   width: auto;
   padding: 8px 14px;
   border-radius: 999px;
-  background: white;
-  color: var(--azul);
-  border: 1px solid var(--borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion);
+}
+
+.chip-contienda:hover:not(.chip-activa) {
+  border-color: var(--color-texto-suave);
 }
 
 .chip-activa {
-  background: var(--azul);
+  background: var(--color-primario);
   color: white;
-  border-color: var(--azul);
+  border-color: var(--color-primario);
 }
 
 .kpi-row {
@@ -241,9 +401,10 @@ body {
 }
 
 .kpi-tile {
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-suave);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -252,12 +413,14 @@ body {
 
 .kpi-label {
   font-size: 0.8rem;
-  color: var(--gris);
+  color: var(--color-texto-suave);
 }
 
 .kpi-valor {
   font-size: 1.6rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .kpi-valor-chica {
@@ -290,13 +453,13 @@ body {
 }
 
 .parroquia-fila span:last-child {
-  color: var(--gris);
+  color: var(--color-texto-suave);
 }
 
 .barra-progreso {
   position: relative;
   height: 8px;
-  background: #e2e8f0;
+  background: var(--color-superficie-alt);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -304,14 +467,14 @@ body {
 .barra-progreso-recibidas {
   position: absolute;
   inset: 0;
-  background: #93c5fd;
+  background: var(--color-info-suave);
   border-radius: 999px;
 }
 
 .barra-progreso-verificadas {
   position: absolute;
   inset: 0;
-  background: var(--verde);
+  background: var(--color-exito);
   border-radius: 999px;
 }
 
@@ -333,15 +496,19 @@ body {
   font-size: 0.9rem;
 }
 
+.barra-candidato-fila strong {
+  font-variant-numeric: tabular-nums;
+}
+
 .barra-candidato-fila em {
-  color: var(--gris);
+  color: var(--color-texto-suave);
   font-style: normal;
   font-size: 0.8em;
 }
 
 .barra-candidato-track {
   height: 14px;
-  background: #f1f5f9;
+  background: var(--color-superficie-alt);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -349,26 +516,35 @@ body {
 .barra-candidato-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.3s ease;
+  transition: width 300ms ease-out;
 }
 
 .admin-nav {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 4px;
+  margin: -8px -8px 22px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--borde);
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .admin-nav a {
-  color: var(--gris);
+  color: var(--color-texto-suave);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
+  padding: 7px 12px;
+  border-radius: var(--radio-chico);
+  transition: background-color var(--transicion), color var(--transicion);
+}
+
+.admin-nav a:hover {
+  background: var(--color-superficie-alt);
+  color: var(--color-texto);
 }
 
 .admin-nav a.active {
-  color: var(--azul);
+  color: var(--color-primario);
+  background: var(--color-primario-suave);
 }
 
 .formulario-candidato {
@@ -388,10 +564,33 @@ body {
 .formulario-candidato > input,
 .formulario-candidato > select {
   flex: 1;
-  padding: 10px;
-  border: 1px solid var(--borde);
-  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
   font-size: 0.95rem;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.fila-formulario input:hover,
+.fila-formulario select:hover,
+.formulario-candidato > input:hover,
+.formulario-candidato > select:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.fila-formulario input:focus-visible,
+.fila-formulario select:focus-visible,
+.formulario-candidato > input:focus-visible,
+.formulario-candidato > select:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
+}
+
+.fila-formulario input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .formulario-candidato button {
@@ -402,8 +601,8 @@ body {
 .aviso-password {
   background: #fef9c3;
   border: 1px solid #eab308;
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: var(--radio-chico);
+  padding: 10px 12px;
   font-size: 0.9rem;
 }
 
@@ -422,18 +621,20 @@ body {
 .candidato-foto {
   width: 64px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
   object-fit: cover;
-  background: #f1f5f9;
+  background: var(--color-superficie-alt);
+  flex-shrink: 0;
 }
 
 .candidato-foto-vacia {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gris);
+  color: var(--color-texto-suave);
   font-size: 0.7rem;
   text-align: center;
+  border: 1px dashed var(--color-borde);
 }
 
 .candidato-info {
@@ -444,10 +645,11 @@ body {
 }
 
 .subir-foto-candidato {
-  color: var(--azul);
+  color: var(--color-primario);
   font-size: 0.8rem;
   cursor: pointer;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .check-activo {
@@ -466,12 +668,59 @@ body {
 
 .acciones-enlace a {
   font-size: 0.85rem;
-  color: var(--verde);
+  color: var(--color-exito);
   font-weight: 600;
+  text-underline-offset: 2px;
 }
 
 .boton-chico {
   width: auto;
   padding: 6px 10px;
   font-size: 0.8rem;
+}
+
+.tarjeta-apariencia {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.campo-color {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.campo-color input[type="color"] {
+  width: 48px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  cursor: pointer;
+  background: none;
+}
+
+.campo-color code {
+  color: var(--color-texto-suave);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.previsualizacion-color {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: var(--color-superficie-alt);
+  border-radius: var(--radio-chico);
+}
+
+.previsualizacion-color button {
+  width: auto;
+  margin: 0;
 }

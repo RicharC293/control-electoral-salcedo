@@ -3,6 +3,7 @@ import { AdminNav } from "./AdminNav";
 import {
   actualizarCandidatoActivo,
   crearCandidato,
+  eliminarCandidato,
   listarCandidatos,
   listarContests,
   subirFotoCandidato,
@@ -62,6 +63,17 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       cargar();
     } catch {
       setError("No se pudo subir la foto.");
+    }
+  }
+
+  async function handleEliminar(c: CandidatoAdmin) {
+    if (!confirm(`¿Eliminar a ${c.nombres} ${c.apellidos}? Esto no se puede deshacer.`)) return;
+    setError(null);
+    try {
+      await eliminarCandidato(c.id);
+      cargar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar.");
     }
   }
 
@@ -128,6 +140,9 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
                   />
                   Activo
                 </label>
+                <button className="boton-secundario boton-chico" onClick={() => handleEliminar(c)}>
+                  Eliminar
+                </button>
               </div>
             </div>
           ))}

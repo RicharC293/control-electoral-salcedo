@@ -176,10 +176,14 @@ async function main() {
     if (errRecinto) throw errRecinto;
 
     const numMesas = num(f["NUM JUNR"]);
+    const numFemeninas = num(f["JUN FEM"]);
+    // Dentro de cada recinto, las primeras jun_fem mesas son femeninas y el
+    // resto masculinas (mismo criterio que el backfill de la migración 0012).
     for (let numeroMesa = 1; numeroMesa <= numMesas; numeroMesa++) {
+      const sexo = numeroMesa <= numFemeninas ? "F" : "M";
       const { error: errMesa } = await supabase
         .from("mesas")
-        .upsert({ recinto_id: recinto.id, numero_mesa: numeroMesa }, { onConflict: "recinto_id,numero_mesa" });
+        .upsert({ recinto_id: recinto.id, numero_mesa: numeroMesa, sexo }, { onConflict: "recinto_id,numero_mesa" });
       if (errMesa) throw errMesa;
     }
     totalMesas += numMesas;

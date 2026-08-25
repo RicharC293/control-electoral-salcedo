@@ -71,6 +71,19 @@ export async function actualizarCandidatoActivo(id: string, activo: boolean): Pr
   if (error) throw error;
 }
 
+// Solo funciona si el candidato todavía no tiene votos registrados (la FK de
+// acta_votos lo impide a propósito) -- si ya tiene, hay que desactivarlo en
+// vez de borrarlo, para no perder resultados ya capturados.
+export async function eliminarCandidato(id: string): Promise<void> {
+  const { error } = await supabase.from("candidates").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error("Este candidato ya tiene votos registrados -- desactívalo en vez de eliminarlo.");
+    }
+    throw error;
+  }
+}
+
 export async function subirFotoCandidato(candidateId: string, archivo: File): Promise<void> {
   const path = `${candidateId}-${Date.now()}.jpg`;
   const { error: errUpload } = await supabase.storage.from("candidatos-fotos").upload(path, archivo, {
@@ -84,7 +97,7 @@ export async function subirFotoCandidato(candidateId: string, archivo: File): Pr
 
 // ===== Geografía (para los formularios) =====
 export type RecintoOpcion = { id: string; nombre: string; parroquia_nombre: string };
-export type MesaOpcion = { id: string; numero_mesa: number; recinto_id: string };
+export type MesaOpcion = { id: string; numero_mesa: number; recinto_id: string; sexo: "F" | "M" };
 
 export async function listarRecintos(): Promise<RecintoOpcion[]> {
   const { data, error } = await supabase
@@ -102,7 +115,7 @@ export async function listarRecintos(): Promise<RecintoOpcion[]> {
 export async function listarMesasDeRecinto(recintoId: string): Promise<MesaOpcion[]> {
   const { data, error } = await supabase
     .from("mesas")
-    .select("id, numero_mesa, recinto_id")
+    .select("id, numero_mesa, recinto_id, sexo")
     .eq("recinto_id", recintoId)
     .order("numero_mesa");
   if (error) throw error;
@@ -115,20 +128,22 @@ export type PerfilAdmin = {
   nombres: string;
   apellidos: string;
   telefono: string | null;
+  cedula: string | null;
   email: string | null;
   rol: "VEEDOR" | "COORDINADOR" | "AUDITOR" | "ADMIN";
   recinto_id: string | null;
   mesa_id: string | null;
   activo: boolean;
+  mesas: { recinto_id: string } | null;
 };
 
 export async function listarPerfiles(): Promise<PerfilAdmin[]> {
   const { data, error } = await supabase
     .from("perfiles")
-    .select("id, nombres, apellidos, telefono, email, rol, recinto_id, mesa_id, activo")
+    .select("id, nombres, apellidos, telefono, cedula, email, rol, recinto_id, mesa_id, activo, mesas ( recinto_id )")
     .order("rol");
   if (error) throw error;
-  return data as PerfilAdmin[];
+  return data as unknown as PerfilAdmin[];
 }
 
 export async function actualizarPerfilActivo(id: string, activo: boolean): Promise<void> {
@@ -136,22 +151,59 @@ export async function actualizarPerfilActivo(id: string, activo: boolean): Promi
   if (error) throw error;
 }
 
+function mensajeAmigablePerfiles(pgMessage: string): string {
+  if (pgMessage.includes("uq_perfiles_un_coordinador_activo_por_recinto")) {
+    return "Ese recinto ya tiene un coordinador activo. Desactívalo primero si quieres reemplazarlo.";
+  }
+  return pgMessage;
+}
+
+// El veedor deja de estar asignado a su mesa y pasa a coordinar todo el
+// recinto de esa mesa (puede registrar por cualquier mesa del recinto).
+export async function ascenderACoordinador(perfil: PerfilAdmin): Promise<void> {
+  const recintoId = perfil.mesas?.recinto_id;
+  if (!recintoId) throw new Error("No se encontró el recinto de este veedor.");
+  const { error } = await supabase
+    .from("perfiles")
+    .update({ rol: "COORDINADOR", recinto_id: recintoId, mesa_id: null })
+    .eq("id", perfil.id);
+  if (error) throw new Error(mensajeAmigablePerfiles(error.message));
+}
+
 export type CrearPerfilInput = {
   nombres: string;
   apellidos: string;
   telefono?: string;
+  cedula?: string;
   rol: "VEEDOR" | "COORDINADOR" | "AUDITOR" | "ADMIN";
   recintoId?: string;
   mesaId?: string;
   email?: string;
 };
 
+// La edge function responde con un body JSON { error: "mensaje" } en los
+// casos esperados (validación, duplicado de cédula/teléfono, etc.), pero
+// supabase-js solo expone un mensaje genérico en error.message cuando el
+// status no es 2xx -- hay que leer el body real desde error.context.
+async function extraerMensajeError(error: unknown): Promise<string> {
+  const conContexto = error as { context?: Response } | null;
+  if (conContexto?.context instanceof Response) {
+    try {
+      const body = await conContexto.context.clone().json();
+      if (typeof body?.error === "string") return body.error;
+    } catch {
+      // seguir al mensaje por defecto
+    }
+  }
+  return "No se pudo crear el perfil.";
+}
+
 export async function crearPerfil(input: CrearPerfilInput): Promise<{ tempPassword: string | null }> {
   const { data, error } = await supabase.functions.invoke<{ tempPassword: string | null; error?: string }>(
     "crear-perfil",
     { body: input }
   );
-  if (error) throw error;
+  if (error) throw new Error(await extraerMensajeError(error));
   if (data?.error) throw new Error(data.error);
   return { tempPassword: data?.tempPassword ?? null };
 }

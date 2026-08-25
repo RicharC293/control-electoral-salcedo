@@ -1,28 +1,95 @@
 :root {
   color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --azul: #0f172a;
-  --verde: #15803d;
-  --rojo: #b91c1c;
-  --gris: #64748b;
-  --fondo: #f8fafc;
-  --borde: #e2e8f0;
+
+  /* Color semilla (marca) -- lib/theme.ts lo sobreescribe al arrancar si hay
+     uno configurado en Admin → Apariencia. Estos son el valor por defecto,
+     duplicados aquí (no derivados de la variable JS) para que no haya un
+     flash de otro color antes de que corra ese script. */
+  --color-primario: #0f172a;
+  --color-primario-hover: #262f3d;
+  --color-primario-suave: #eceef2;
+  --color-primario-rgb: 15 23 42;
+
+  /* Semánticos -- no cambian con el color semilla */
+  --color-exito: #15803d;
+  --color-exito-suave: #dcfce7;
+  --color-error: #b91c1c;
+  --color-error-suave: #fee2e2;
+  --color-info: #1d4ed8;
+  --color-info-suave: #dbeafe;
+
+  /* Neutros */
+  --color-texto: #0f172a;
+  --color-texto-suave: #64748b;
+  --color-borde: #e2e8f0;
+  --color-fondo: #f8fafc;
+  --color-superficie: #ffffff;
+  --color-superficie-alt: #f1f5f9;
+
+  /* Alias de compatibilidad con nombres usados en todo el CSS existente */
+  --azul: var(--color-primario);
+  --verde: var(--color-exito);
+  --rojo: var(--color-error);
+  --gris: var(--color-texto-suave);
+  --fondo: var(--color-fondo);
+  --borde: var(--color-borde);
+
+  --sombra-suave: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.07);
+  --sombra-media: 0 8px 20px rgb(15 23 42 / 0.10), 0 2px 6px rgb(15 23 42 / 0.06);
+  --anillo-foco: 0 0 0 3px rgb(var(--color-primario-rgb) / 0.28);
+  --radio: 12px;
+  --radio-chico: 8px;
+  --transicion: 150ms ease-out;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   margin: 0;
-  background: var(--fondo);
-  color: var(--azul);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-primario-suave);
+  color: var(--color-texto);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-texto-suave);
+  border-radius: 999px;
+  opacity: 0.4;
+}
+
+* {
+  scrollbar-color: var(--color-texto-suave) transparent;
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+  border-radius: var(--radio-chico);
 }
 
 .contenedor {
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 16px 48px;
+  padding: 20px 16px 56px;
 }
 
 .pantalla-centrada {
@@ -35,31 +102,51 @@ body {
   padding: 24px;
 }
 
+.pantalla-centrada h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.pantalla-centrada p {
+  color: var(--color-texto-suave);
+  margin: 4px 0;
+}
+
 .encabezado {
-  margin-bottom: 16px;
+  margin: 0 -16px 20px;
+  padding: 16px 16px 18px;
+  background: var(--color-superficie-alt);
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .encabezado h1 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 700;
   margin: 0 0 4px;
+  letter-spacing: -0.01em;
 }
 
 .encabezado p {
   margin: 0;
-  color: var(--gris);
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
 }
 
 .card {
-  background: white;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  padding: 16px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-suave);
+  padding: 18px;
   margin-bottom: 16px;
+  transition: box-shadow var(--transicion);
 }
 
 .card h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
   font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .campo-voto {
@@ -67,8 +154,8 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--borde);
+  padding: 11px 0;
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .campo-voto:last-of-type {
@@ -77,10 +164,11 @@ body {
 
 .campo-voto span {
   flex: 1;
+  font-size: 0.95rem;
 }
 
 .campo-voto em {
-  color: var(--gris);
+  color: var(--color-texto-suave);
   font-style: normal;
   font-size: 0.85em;
 }
@@ -88,78 +176,117 @@ body {
 .campo-voto input {
   width: 80px;
   font-size: 1.1rem;
-  padding: 8px;
-  border: 1px solid var(--borde);
-  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  padding: 9px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
   text-align: right;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+
+.campo-voto input:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.campo-voto input:focus-visible {
+  border-color: var(--color-primario);
+  box-shadow: var(--anillo-foco);
 }
 
 button {
   width: 100%;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 600;
   padding: 14px;
   margin-top: 12px;
   border: none;
-  border-radius: 10px;
-  background: var(--azul);
+  border-radius: var(--radio-chico);
+  background: var(--color-primario);
   color: white;
   cursor: pointer;
+  transition: background-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-primario-hover);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button:focus-visible {
+  box-shadow: var(--anillo-foco);
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 .error {
-  color: var(--rojo);
+  color: var(--color-error);
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .card-solo-lectura {
-  background: #f1f5f9;
+  background: var(--color-superficie-alt);
+  border-color: var(--color-borde);
 }
 
 .estado {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .estado-enviada {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-info-suave);
+  color: var(--color-info);
 }
 
 .estado-verificada {
-  background: #dcfce7;
-  color: var(--verde);
+  background: var(--color-exito-suave);
+  color: var(--color-exito);
 }
 
 .estado-rechazada {
-  background: #fee2e2;
-  color: var(--rojo);
+  background: var(--color-error-suave);
+  color: var(--color-error);
 }
 
 .lista-votos {
   list-style: none;
   padding: 0;
-  margin: 12px 0;
+  margin: 4px 0 12px;
 }
 
 .lista-votos li {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--borde);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 0.95rem;
+}
+
+.lista-votos li:last-child {
+  border-bottom: none;
+}
+
+.lista-votos strong {
+  font-variant-numeric: tabular-nums;
 }
 
 .nota-bloqueo {
-  color: var(--gris);
-  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .soporte-card {
@@ -171,28 +298,37 @@ button:disabled {
 .boton-soporte {
   display: block;
   text-align: center;
-  padding: 12px;
-  border-radius: 10px;
-  background: #16a34a;
+  padding: 13px;
+  border-radius: var(--radio-chico);
+  background: var(--color-exito);
   color: white;
   text-decoration: none;
   font-weight: 600;
+  transition: filter var(--transicion);
+}
+
+.boton-soporte:hover {
+  filter: brightness(1.08);
 }
 
 .boton-soporte-secundario {
-  background: white;
-  color: var(--azul);
-  border: 1px solid var(--borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+}
+
+.boton-soporte-secundario:hover {
+  border-color: var(--color-texto-suave);
 }
 
 .foto-acta {
-  margin: 12px 0;
+  margin: 14px 0;
 }
 
 .foto-acta-preview {
   width: 100%;
-  border-radius: 10px;
-  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  border: 1px solid var(--color-borde);
   margin-bottom: 8px;
   display: block;
 }
@@ -200,12 +336,18 @@ button:disabled {
 .boton-foto {
   display: block;
   text-align: center;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px dashed var(--gris);
-  color: var(--azul);
+  padding: 13px;
+  border-radius: var(--radio-chico);
+  border: 1.5px dashed var(--color-texto-suave);
+  color: var(--color-texto);
   font-weight: 600;
   cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion);
+}
+
+.boton-foto:hover {
+  border-color: var(--color-primario);
+  background: var(--color-primario-suave);
 }
 
 .pill-sync-wrap {
@@ -213,27 +355,28 @@ button:disabled {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
 .estado-sync-pending {
-  background: #e2e8f0;
-  color: var(--gris);
+  background: var(--color-superficie-alt);
+  color: var(--color-texto-suave);
 }
 
 .estado-sync-syncing {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-info-suave);
+  color: var(--color-info);
 }
 
 .estado-sync-error {
-  background: #fee2e2;
-  color: var(--rojo);
+  background: var(--color-error-suave);
+  color: var(--color-error);
 }
 
 .boton-reintentar {
   width: auto;
   margin: 0;
-  padding: 6px 14px;
+  padding: 7px 14px;
   font-size: 0.85rem;
-  background: var(--rojo);
+  background: var(--color-error);
 }

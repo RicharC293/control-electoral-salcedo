@@ -28,10 +28,22 @@ function generarPassword(): string {
   return crypto.randomUUID() + crypto.randomUUID();
 }
 
+// Traduce los nombres de constraint de Postgres a un mensaje que un ADMIN
+// no técnico pueda entender.
+function mensajeAmigable(pgMessage: string): string {
+  if (pgMessage.includes("uq_perfiles_cedula")) return "Ya existe un perfil registrado con esa cédula.";
+  if (pgMessage.includes("uq_perfiles_telefono")) return "Ya existe un perfil registrado con ese teléfono.";
+  if (pgMessage.includes("uq_perfiles_un_coordinador_activo_por_recinto")) {
+    return "Ese recinto ya tiene un coordinador activo. Desactívalo primero si quieres reemplazarlo.";
+  }
+  return pgMessage;
+}
+
 type Body = {
   nombres: string;
   apellidos: string;
   telefono?: string;
+  cedula?: string;
   rol: "VEEDOR" | "COORDINADOR" | "AUDITOR" | "ADMIN";
   recintoId?: string;
   mesaId?: string;
@@ -89,6 +101,9 @@ Deno.serve(async (req) => {
   if ((body.rol === "AUDITOR" || body.rol === "ADMIN") && !body.email) {
     return jsonResponse({ error: `${body.rol} requiere email` }, 400);
   }
+  if ((body.rol === "VEEDOR" || body.rol === "COORDINADOR") && (!body.cedula || !body.telefono)) {
+    return jsonResponse({ error: "Veedor y coordinador requieren cédula y teléfono" }, 400);
+  }
 
   const esCampo = body.rol === "VEEDOR" || body.rol === "COORDINADOR";
   const email = esCampo ? `${crypto.randomUUID()}@captura.local` : body.email!;
@@ -110,6 +125,7 @@ Deno.serve(async (req) => {
       nombres: body.nombres,
       apellidos: body.apellidos,
       telefono: body.telefono ?? null,
+      cedula: body.cedula ?? null,
       email,
       rol: body.rol,
       recinto_id: body.rol === "COORDINADOR" ? body.recintoId : null,
@@ -122,7 +138,7 @@ Deno.serve(async (req) => {
   if (errPerfil) {
     // limpiar el usuario de Auth huérfano si perfiles falló (p.ej. constraint)
     await admin.auth.admin.deleteUser(userData.user.id);
-    return jsonResponse({ error: errPerfil.message }, 500);
+    return jsonResponse({ error: mensajeAmigable(errPerfil.message) }, 400);
   }
 
   return jsonResponse({
