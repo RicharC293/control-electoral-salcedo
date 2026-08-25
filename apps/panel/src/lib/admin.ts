@@ -261,7 +261,8 @@ function tokenAleatorio(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-const CAPTURA_URL = import.meta.env.VITE_CAPTURA_URL as string;
+// Sin barra final, sin importar cómo esté configurada la variable de entorno.
+const CAPTURA_URL = (import.meta.env.VITE_CAPTURA_URL as string).replace(/\/+$/, "");
 
 export async function generarEnlaceAcceso(perfil: PerfilAdmin, creadoPor: string): Promise<{ url: string; waUrl: string }> {
   const raw = tokenAleatorio();
