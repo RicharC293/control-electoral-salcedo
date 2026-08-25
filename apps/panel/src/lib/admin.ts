@@ -80,6 +80,13 @@ export async function actualizarCandidatoActivo(id: string, activo: boolean): Pr
   if (error) throw error;
 }
 
+// Orden en la papeleta dentro de su contienda -- lo usa captura (formulario y
+// solo-lectura), la auditoría del acta y esta misma lista de candidatos.
+export async function actualizarOrdenCandidato(id: string, orden: number): Promise<void> {
+  const { error } = await supabase.from("candidates").update({ orden }).eq("id", id);
+  if (error) throw error;
+}
+
 // Solo funciona si el candidato todavía no tiene votos registrados (la FK de
 // acta_votos lo impide a propósito) -- si ya tiene, hay que desactivarlo en
 // vez de borrarlo, para no perder resultados ya capturados.

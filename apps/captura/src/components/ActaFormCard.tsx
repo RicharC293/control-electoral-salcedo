@@ -65,16 +65,6 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
       ))}
 
       <label className="campo-voto">
-        <span>Votos en blanco</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={blancos}
-          onChange={(e) => setBlancos(Number(e.target.value))}
-        />
-      </label>
-      <label className="campo-voto">
         <span>Votos nulos</span>
         <input
           type="number"
@@ -82,6 +72,16 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           min={0}
           value={nulos}
           onChange={(e) => setNulos(Number(e.target.value))}
+        />
+      </label>
+      <label className="campo-voto">
+        <span>Votos en blanco</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={blancos}
+          onChange={(e) => setBlancos(Number(e.target.value))}
         />
       </label>
 

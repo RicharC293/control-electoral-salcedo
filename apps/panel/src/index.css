@@ -706,6 +706,11 @@ a {
   gap: 12px;
 }
 
+.nota-orden-papeleta {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
+
 .candidato-card {
   display: flex;
   flex-direction: column;
@@ -716,6 +721,40 @@ a {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.candidato-orden-botones {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.boton-orden {
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-superficie) !important;
+  color: var(--color-texto) !important;
+  border: 1px solid var(--color-borde) !important;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--transicion), background-color var(--transicion);
+}
+
+.boton-orden:hover:not(:disabled) {
+  background: var(--color-superficie-alt) !important;
+  border-color: var(--color-texto-suave) !important;
+}
+
+.boton-orden:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .candidato-identidad {

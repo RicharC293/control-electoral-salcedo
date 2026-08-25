@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AdminNav } from "./AdminNav";
 import {
   actualizarCandidatoActivo,
+  actualizarOrdenCandidato,
   crearCandidato,
   eliminarCandidato,
   listarCandidatos,
@@ -73,6 +74,21 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       cargar();
     } catch {
       mostrarError("No se pudo subir la foto.");
+    }
+  }
+
+  async function moverCandidato(c: CandidatoAdmin, direccion: -1 | 1) {
+    const indice = candidatosDelContest.findIndex((x) => x.id === c.id);
+    const vecino = candidatosDelContest[indice + direccion];
+    if (!vecino) return;
+    try {
+      await Promise.all([
+        actualizarOrdenCandidato(c.id, vecino.orden),
+        actualizarOrdenCandidato(vecino.id, c.orden),
+      ]);
+      cargar();
+    } catch {
+      mostrarError("No se pudo actualizar el orden.");
     }
   }
 
@@ -178,9 +194,35 @@ export function Candidatos({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
         <p>Cargando...</p>
       ) : (
         <div className="lista-candidatos">
-          {candidatosDelContest.map((c) => (
+          {candidatosDelContest.length > 0 && (
+            <p className="nota-bloqueo nota-orden-papeleta">
+              Usa las flechas para ajustar el orden en que aparecen en la papeleta de captura y auditoría. Los
+              votos nulos y en blanco siempre van al final, en ese orden.
+            </p>
+          )}
+          {candidatosDelContest.map((c, indice) => (
             <div key={c.id} className="card candidato-card">
               <div className="candidato-encabezado">
+                <div className="candidato-orden-botones">
+                  <button
+                    type="button"
+                    className="boton-orden"
+                    disabled={indice === 0}
+                    onClick={() => moverCandidato(c, -1)}
+                    aria-label={`Mover a ${c.nombres} ${c.apellidos} hacia arriba`}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="boton-orden"
+                    disabled={indice === candidatosDelContest.length - 1}
+                    onClick={() => moverCandidato(c, 1)}
+                    aria-label={`Mover a ${c.nombres} ${c.apellidos} hacia abajo`}
+                  >
+                    ↓
+                  </button>
+                </div>
                 {c.foto_url ? (
                   <img src={c.foto_url} alt={c.nombres} className="candidato-foto" />
                 ) : (

@@ -164,12 +164,12 @@ export function AuditoriaDetail() {
             </label>
           ))}
           <label className="campo-voto">
-            <span>Votos en blanco</span>
-            <input type="number" min={0} value={blancos} onChange={(e) => setBlancos(Number(e.target.value))} />
-          </label>
-          <label className="campo-voto">
             <span>Votos nulos</span>
             <input type="number" min={0} value={nulos} onChange={(e) => setNulos(Number(e.target.value))} />
+          </label>
+          <label className="campo-voto">
+            <span>Votos en blanco</span>
+            <input type="number" min={0} value={blancos} onChange={(e) => setBlancos(Number(e.target.value))} />
           </label>
 
           <button disabled={guardando} onClick={handleGuardar}>

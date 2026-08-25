@@ -94,12 +94,12 @@ export function ActaReadOnlyCard({
           </li>
         ))}
         <li>
-          <span>Votos en blanco</span>
-          <strong>{acta.votos_blancos}</strong>
-        </li>
-        <li>
           <span>Votos nulos</span>
           <strong>{acta.votos_nulos}</strong>
+        </li>
+        <li>
+          <span>Votos en blanco</span>
+          <strong>{acta.votos_blancos}</strong>
         </li>
       </ul>
 
