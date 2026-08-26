@@ -1,19 +1,19 @@
 import { calcularEscanos } from "@control-electoral/domain";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { PerfilPanel } from "../lib/auth";
 import { cerrarSesion } from "../lib/auth";
 import { obtenerMetodoReparto } from "../lib/config";
 import { AdminNav } from "./admin/AdminNav";
 import {
-  obtenerActasDeContest,
   obtenerConfianzaContests,
   obtenerConfianzaParroquias,
+  obtenerElectoresPendientes,
+  obtenerResumenElectoral,
   obtenerVotosPorCandidato,
   suscribirCambiosActas,
-  type ActaResumen,
   type ConfianzaContest,
   type ConfianzaParroquia,
+  type ResumenElectoral,
   type VotoCandidato,
 } from "../lib/dashboard";
 
@@ -22,6 +22,7 @@ type Props = { perfil: PerfilPanel; onSalir: () => void };
 const COLOR_DEFECTO = ["#0f172a", "#1d4ed8", "#15803d", "#b45309", "#7c3aed", "#0891b2"];
 const COLOR_BLANCOS = "#94a3b8";
 const COLOR_NULOS = "#b91c1c";
+const COLOR_SIN_REPORTAR = "#e2e8f0";
 
 function colorConfianza(pct: number | null): string {
   if (pct === null) return "var(--gris)";
@@ -30,30 +31,15 @@ function colorConfianza(pct: number | null): string {
   return "var(--verde)";
 }
 
-function construirTendencia(actas: ActaResumen[]): { t: string; recibidas: number; verificadas: number }[] {
-  if (actas.length === 0) return [];
-  const eventos = actas
-    .map((a) => new Date(a.submitted_at).getTime())
-    .concat(actas.filter((a) => a.verified_at).map((a) => new Date(a.verified_at!).getTime()));
-  const inicio = Math.min(...eventos);
-  const fin = Math.max(...eventos, Date.now());
-  const PASO = 15 * 60 * 1000;
-  const puntos: { t: string; recibidas: number; verificadas: number }[] = [];
-  for (let t = inicio; t <= fin; t += PASO) {
-    const recibidas = actas.filter((a) => new Date(a.submitted_at).getTime() <= t).length;
-    const verificadas = actas.filter((a) => a.verified_at && new Date(a.verified_at).getTime() <= t).length;
-    puntos.push({ t: new Date(t).toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" }), recibidas, verificadas });
-  }
-  const ultimo = { t: "ahora", recibidas: actas.length, verificadas: actas.filter((a) => a.verified_at).length };
-  return [...puntos, ultimo];
-}
-
 export function Dashboard({ perfil, onSalir }: Props) {
   const [contests, setContests] = useState<ConfianzaContest[]>([]);
   const [parroquias, setParroquias] = useState<ConfianzaParroquia[]>([]);
   const [contestId, setContestId] = useState<string | null>(null);
+  const [parroquiaFiltroId, setParroquiaFiltroId] = useState<string>("");
   const [votos, setVotos] = useState<VotoCandidato[]>([]);
-  const [actas, setActas] = useState<ActaResumen[]>([]);
+  const [votosTotales, setVotosTotales] = useState<VotoCandidato[]>([]);
+  const [resumen, setResumen] = useState<ResumenElectoral | null>(null);
+  const [electoresPendientes, setElectoresPendientes] = useState<number | null>(null);
   const [cargando, setCargando] = useState(true);
   const [metodoReparto, setMetodoReparto] = useState<"DHONT" | "WEBSTER">("DHONT");
 
@@ -72,66 +58,102 @@ export function Dashboard({ perfil, onSalir }: Props) {
     obtenerMetodoReparto().then(setMetodoReparto);
   }, []);
 
-  const cargarContest = useCallback(async (id: string) => {
+  // Cambiar de contienda invalida el filtro de parroquia anterior -- las
+  // parroquias que aplican no son las mismas de una contienda a otra.
+  useEffect(() => {
+    setParroquiaFiltroId("");
+  }, [contestId]);
+
+  const cargarContest = useCallback(async (id: string, parroquiaId: string, esAlcalde: boolean) => {
     setCargando(true);
-    const [v, a] = await Promise.all([obtenerVotosPorCandidato(id), obtenerActasDeContest(id)]);
+    const filtro = parroquiaId || null;
+    const [v, vTotal, r, pendientes] = await Promise.all([
+      obtenerVotosPorCandidato(id, filtro),
+      filtro ? obtenerVotosPorCandidato(id, null) : Promise.resolve(null),
+      obtenerResumenElectoral(id, filtro),
+      esAlcalde ? obtenerElectoresPendientes(id) : Promise.resolve(null),
+    ]);
     setVotos(v);
-    setActas(a);
+    setVotosTotales(vTotal ?? v);
+    setResumen(r);
+    setElectoresPendientes(pendientes);
     setCargando(false);
   }, []);
 
+  const contest = contests.find((c) => c.contest_id === contestId) ?? null;
+
   useEffect(() => {
     if (!contestId) return;
-    cargarContest(contestId);
+    const esAlcalde = contest?.tipo === "ALCALDE";
+    cargarContest(contestId, parroquiaFiltroId, esAlcalde);
     const cancelar = suscribirCambiosActas(contestId, () => {
-      cargarContest(contestId);
+      cargarContest(contestId, parroquiaFiltroId, esAlcalde);
       cargarBase();
     });
     return cancelar;
-  }, [contestId, cargarContest, cargarBase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contestId, parroquiaFiltroId, contest?.tipo, cargarContest, cargarBase]);
 
-  const contest = contests.find((c) => c.contest_id === contestId) ?? null;
   const parroquiasContest = useMemo(
     () => parroquias.filter((p) => p.contest_id === contestId),
     [parroquias, contestId]
   );
 
+  // "Sin reportar" es la diferencia entre el padrón (electoradoTotal) y lo
+  // que ya se contó -- no se puede distinguir todavía entre "no vino a votar"
+  // y "votó pero su acta no ha llegado", así que se muestra como una sola
+  // franja pendiente en vez de asumir ausentismo.
   const composicion = useMemo(() => {
+    if (!resumen) return [];
     const validos = votos.reduce((acc, v) => acc + v.votos, 0);
-    const blancos = actas.reduce((acc, a) => acc + a.votos_blancos, 0);
-    const nulos = actas.reduce((acc, a) => acc + a.votos_nulos, 0);
+    const contado = validos + resumen.votosBlancos + resumen.votosNulos;
+    const sinReportar = Math.max(0, resumen.electoradoTotal - contado);
     return [
       { nombre: "Válidos", valor: validos, color: "#0f172a" },
-      { nombre: "Blancos", valor: blancos, color: COLOR_BLANCOS },
-      { nombre: "Nulos", valor: nulos, color: COLOR_NULOS },
+      { nombre: "Blancos", valor: resumen.votosBlancos, color: COLOR_BLANCOS },
+      { nombre: "Nulos", valor: resumen.votosNulos, color: COLOR_NULOS },
+      { nombre: "Sin reportar", valor: sinReportar, color: COLOR_SIN_REPORTAR },
     ].filter((d) => d.valor > 0);
-  }, [votos, actas]);
+  }, [votos, resumen]);
 
-  const tendencia = useMemo(() => construirTendencia(actas), [actas]);
+  const totalComposicion = composicion.reduce((acc, d) => acc + d.valor, 0);
 
   // Cada "candidato" en estas contiendas representa a toda su lista/partido
   // (así se definió a propósito, para no romper el esquema con candidatos
   // individuales) -- sus votos ya son el total del partido, listos para
-  // repartir. Se recalcula con cada acta nueva que llega, aunque todavía no
-  // esté verificada: es una proyección de tendencia, no el resultado oficial.
+  // repartir. Usa siempre votosTotales (sin filtro de parroquia): los escaños
+  // se reparten sobre toda la contienda, no sobre un recorte de ella.
   const proyeccionEscanos = useMemo(() => {
-    // Con todos los candidatos en 0 votos, D'Hondt/Webster igual reparten los
-    // escaños (empate exacto, gana el orden de la lista) -- eso confundiría
-    // más de lo que ayuda, así que no se proyecta nada hasta que haya votos.
-    if (!contest || contest.numero_dignidades <= 1 || !votos.some((v) => v.votos > 0)) return [];
+    if (!contest || contest.numero_dignidades <= 1 || !votosTotales.some((v) => v.votos > 0)) return [];
     const resultado = calcularEscanos(
-      votos.map((v) => ({ candidateId: v.candidateId, votos: v.votos })),
+      votosTotales.map((v) => ({ candidateId: v.candidateId, votos: v.votos })),
       contest.numero_dignidades,
       metodoReparto
     );
     return resultado
       .map((r) => ({
-        partidoNombre: votos.find((v) => v.candidateId === r.candidateId)?.partidoNombre ?? "",
+        partidoNombre: votosTotales.find((v) => v.candidateId === r.candidateId)?.partidoNombre ?? "",
         escanos: r.escanos,
       }))
       .filter((r) => r.escanos > 0)
       .sort((a, b) => b.escanos - a.escanos);
-  }, [contest, votos, metodoReparto]);
+  }, [contest, votosTotales, metodoReparto]);
+
+  // Irreversibilidad: solo tiene sentido en Alcalde (un solo ganador por
+  // mayoría simple). En Prefecto/Concejales/Juntas Parroquiales el resultado
+  // se reparte en escaños (D'Hondt/Webster), así que "quién ya no puede ser
+  // alcanzado" no aplica de la misma forma. Usa votosTotales: la alcaldía se
+  // decide con todo el cantón, nunca con un recorte por parroquia.
+  const tendenciaAlcalde = useMemo(() => {
+    if (!contest || contest.tipo !== "ALCALDE" || electoresPendientes === null) return null;
+    const ordenados = [...votosTotales].sort((a, b) => b.votos - a.votos);
+    const lider = ordenados[0];
+    const segundo = ordenados[1];
+    if (!lider || !segundo || lider.votos === 0) return null;
+    const ventaja = lider.votos - segundo.votos;
+    const decidido = ventaja > electoresPendientes;
+    return { lider, segundo, ventaja, electoresPendientes, decidido };
+  }, [contest, votosTotales, electoresPendientes]);
 
   return (
     <div className="contenedor-panel">
@@ -214,6 +236,20 @@ export function Dashboard({ perfil, onSalir }: Props) {
             </div>
           )}
 
+          {parroquiasContest.length > 1 && (
+            <label className="campo-etiquetado campo-orden">
+              <span>Filtrar por parroquia</span>
+              <select value={parroquiaFiltroId} onChange={(e) => setParroquiaFiltroId(e.target.value)}>
+                <option value="">Todos</option>
+                {parroquiasContest.map((p) => (
+                  <option key={p.parroquia_id} value={p.parroquia_id}>
+                    {p.parroquia_nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
           <div className="graficos-grid">
             <div className="card">
               <h3>Votos por candidato</h3>
@@ -252,36 +288,72 @@ export function Dashboard({ perfil, onSalir }: Props) {
               {composicion.length === 0 ? (
                 <p className="nota-bloqueo">Sin datos todavía.</p>
               ) : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={composicion} dataKey="valor" nameKey="nombre" innerRadius={55} outerRadius={85}>
-                      {composicion.map((d) => (
-                        <Cell key={d.nombre} fill={d.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <>
+                  <div className="composicion-barra">
+                    {composicion.map((d) => (
+                      <div
+                        key={d.nombre}
+                        className="composicion-barra-tramo"
+                        style={{ width: `${(100 * d.valor) / totalComposicion}%`, background: d.color }}
+                        title={`${d.nombre}: ${d.valor}`}
+                      />
+                    ))}
+                  </div>
+                  <ul className="lista-composicion">
+                    {composicion.map((d) => (
+                      <li key={d.nombre}>
+                        <span className="composicion-punto" style={{ background: d.color }} />
+                        <span className="composicion-nombre">{d.nombre}</span>
+                        <strong>{d.valor.toLocaleString("es-EC")}</strong>
+                        <span className="composicion-pct">
+                          {totalComposicion > 0 ? Math.round((100 * d.valor) / totalComposicion) : 0}%
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {resumen && (
+                    <p className="nota-bloqueo composicion-padron">
+                      Sobre un padrón de {resumen.electoradoTotal.toLocaleString("es-EC")} electores
+                      {parroquiaFiltroId ? " en esta parroquia" : ""}.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          <div className="card">
-            <h3>Tendencia de actas</h3>
-            {tendencia.length === 0 ? (
-              <p className="nota-bloqueo">Sin actas todavía.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={tendencia}>
-                  <XAxis dataKey="t" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="recibidas" stroke="#1d4ed8" fill="#dbeafe" name="Recibidas" />
-                  <Area type="monotone" dataKey="verificadas" stroke="#15803d" fill="#dcfce7" name="Verificadas" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          {contest.tipo === "ALCALDE" && (
+            <div className="card">
+              <h3>Tendencia</h3>
+              {!tendenciaAlcalde ? (
+                <p className="nota-bloqueo">Todavía no hay votos suficientes para proyectar una tendencia.</p>
+              ) : (
+                <div className={`tendencia-alcalde ${tendenciaAlcalde.decidido ? "tendencia-decidida" : ""}`}>
+                  <p className="tendencia-estado">
+                    {tendenciaAlcalde.decidido
+                      ? "Resultado matemáticamente decidido"
+                      : "Todavía puede cambiar"}
+                  </p>
+                  <p>
+                    <strong>
+                      {tendenciaAlcalde.lider.nombres} {tendenciaAlcalde.lider.apellidos}
+                    </strong>{" "}
+                    ({tendenciaAlcalde.lider.partidoNombre}) lidera con {tendenciaAlcalde.lider.votos.toLocaleString("es-EC")}{" "}
+                    votos, {tendenciaAlcalde.ventaja.toLocaleString("es-EC")} más que{" "}
+                    {tendenciaAlcalde.segundo.nombres} {tendenciaAlcalde.segundo.apellidos} (
+                    {tendenciaAlcalde.segundo.partidoNombre}).
+                  </p>
+                  <p className="nota-bloqueo">
+                    Quedan hasta {tendenciaAlcalde.electoresPendientes.toLocaleString("es-EC")} electores por
+                    reportar todavía.{" "}
+                    {tendenciaAlcalde.decidido
+                      ? "Ni votando todos por el segundo lugar alcanzarían al líder."
+                      : "Esa diferencia todavía podría cerrar la ventaja."}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="card">
             <h3>Por parroquia</h3>

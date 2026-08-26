@@ -9,6 +9,7 @@ export type ConfianzaContest = {
   actas_verificadas: number;
   confianza_pct: number | null;
   numero_dignidades: number;
+  orden: number;
 };
 
 export type ConfianzaParroquia = {
@@ -41,7 +42,7 @@ export type VotoCandidato = {
   votos: number;
 };
 
-export async function obtenerVotosPorCandidato(contestId: string): Promise<VotoCandidato[]> {
+export async function obtenerVotosPorCandidato(contestId: string, parroquiaId: string | null = null): Promise<VotoCandidato[]> {
   const { data: candidatos, error: errCand } = await supabase
     .from("candidates")
     .select("id, nombres, apellidos, partido_nombre, partido_color, orden")
@@ -51,29 +52,15 @@ export async function obtenerVotosPorCandidato(contestId: string): Promise<VotoC
   if (errCand) throw errCand;
   if (!candidatos || candidatos.length === 0) return [];
 
-  const { data: actas, error: errActas } = await supabase.from("actas").select("id").eq("contest_id", contestId);
-  if (errActas) throw errActas;
-  const actaIds = (actas ?? []).map((a) => a.id);
-  if (actaIds.length === 0) {
-    return candidatos.map((c) => ({
-      candidateId: c.id,
-      nombres: c.nombres,
-      apellidos: c.apellidos,
-      partidoNombre: c.partido_nombre,
-      partidoColor: c.partido_color,
-      votos: 0,
-    }));
-  }
-
-  const { data: votos, error: errVotos } = await supabase
-    .from("acta_votos")
-    .select("candidate_id, votos")
-    .in("acta_id", actaIds);
+  const { data: votos, error: errVotos } = await supabase.rpc("obtener_votos_candidatos", {
+    p_contest_id: contestId,
+    p_parroquia_id: parroquiaId,
+  });
   if (errVotos) throw errVotos;
 
   const totalesPorCandidato = new Map<string, number>();
-  for (const v of votos ?? []) {
-    totalesPorCandidato.set(v.candidate_id, (totalesPorCandidato.get(v.candidate_id) ?? 0) + v.votos);
+  for (const v of (votos ?? []) as { candidate_id: string; votos: number }[]) {
+    totalesPorCandidato.set(v.candidate_id, v.votos);
   }
 
   return candidatos
@@ -88,22 +75,24 @@ export async function obtenerVotosPorCandidato(contestId: string): Promise<VotoC
     .sort((a, b) => b.votos - a.votos);
 }
 
-export type ActaResumen = {
-  id: string;
-  estado: string;
-  votos_blancos: number;
-  votos_nulos: number;
-  submitted_at: string;
-  verified_at: string | null;
-};
+export type ResumenElectoral = { votosBlancos: number; votosNulos: number; electoradoTotal: number };
 
-export async function obtenerActasDeContest(contestId: string): Promise<ActaResumen[]> {
+export async function obtenerResumenElectoral(contestId: string, parroquiaId: string | null = null): Promise<ResumenElectoral> {
   const { data, error } = await supabase
-    .from("actas")
-    .select("id, estado, votos_blancos, votos_nulos, submitted_at, verified_at")
-    .eq("contest_id", contestId);
+    .rpc("obtener_resumen_electoral_contest", { p_contest_id: contestId, p_parroquia_id: parroquiaId })
+    .single();
   if (error) throw error;
-  return data as ActaResumen[];
+  const fila = data as { votos_blancos: number; votos_nulos: number; electorado_total: number };
+  return { votosBlancos: fila.votos_blancos, votosNulos: fila.votos_nulos, electoradoTotal: fila.electorado_total };
+}
+
+// Cuántos electores le quedan por reportar a la contienda (mesas sin acta
+// todavía), estimados a partir del padrón del recinto -- se usa para saber si
+// la ventaja del líder ya es matemáticamente imposible de remontar.
+export async function obtenerElectoresPendientes(contestId: string): Promise<number> {
+  const { data, error } = await supabase.rpc("obtener_electores_pendientes", { p_contest_id: contestId });
+  if (error) throw error;
+  return data as number;
 }
 
 export function suscribirCambiosActas(contestId: string, onChange: () => void) {
