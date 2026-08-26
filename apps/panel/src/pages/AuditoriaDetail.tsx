@@ -13,6 +13,7 @@ import {
   obtenerFotos,
   obtenerUrlFirmadaFoto,
   obtenerVotos,
+  subirFotoAuditoria,
   verificarActa,
   type ActaDetalle,
   type CambioRow,
@@ -27,12 +28,20 @@ type Datos = {
   candidatos: CandidatoRow[];
   votos: Record<string, number>;
   fotoUrl: string | null;
+  fotoEsPdf: boolean;
   submitter: ContactoRow | null;
   coordinador: ContactoRow | null;
   cambios: CambioRow[];
 };
 
 const PREFIJO_VOTO_CANDIDATO = "voto_candidato:";
+
+const ESTADO_LABEL: Record<string, string> = {
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada",
+  VERIFICADA: "Verificada",
+  RECHAZADA: "Rechazada",
+};
 
 function describirCampo(campo: string, candidatos: CandidatoRow[]): string {
   if (campo === "votos_blancos") return "Votos en blanco";
@@ -46,7 +55,23 @@ function describirCampo(campo: string, candidatos: CandidatoRow[]): string {
   return campo;
 }
 
-export function AuditoriaDetail() {
+// El historial mezcla tres tipos de evento (edición de votos, verificación,
+// subida de foto/PDF) -- cada uno se lee distinto, así que arma la línea
+// completa en vez de forzar a todos al mismo "campo: anterior → nuevo".
+function describirCambio(c: CambioRow, candidatos: CandidatoRow[]): string {
+  if (c.campo === "estado") {
+    const nuevo = ESTADO_LABEL[c.valor_nuevo ?? ""] ?? c.valor_nuevo;
+    if (c.valor_nuevo === "VERIFICADA") return "Acta verificada";
+    const anterior = ESTADO_LABEL[c.valor_anterior ?? ""] ?? c.valor_anterior;
+    return `Estado: ${anterior} → ${nuevo}`;
+  }
+  if (c.campo === "foto") return `Foto/PDF actualizado (${c.valor_nuevo ?? "archivo"})`;
+  return `${describirCampo(c.campo, candidatos)}: ${c.valor_anterior} → ${c.valor_nuevo}`;
+}
+
+type Props = { perfilId: string };
+
+export function AuditoriaDetail({ perfilId }: Props) {
   const { mostrarExito, mostrarError } = useToast();
   const { id } = useParams<{ id: string }>();
   const [datos, setDatos] = useState<Datos | "cargando" | "error">("cargando");
@@ -54,6 +79,7 @@ export function AuditoriaDetail() {
   const [nulos, setNulos] = useState(0);
   const [totalVotantes, setTotalVotantes] = useState<number | "">("");
   const [guardando, setGuardando] = useState(false);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!id) return;
@@ -69,12 +95,14 @@ export function AuditoriaDetail() {
         obtenerCambios(id),
       ]);
       const votos = Object.fromEntries(votosRows.map((v) => [v.candidate_id, v.votos]));
-      const fotoUrl = fotos[0] ? await obtenerUrlFirmadaFoto((fotos[0] as FotoRow).storage_path) : null;
+      const primeraFoto = fotos[0] as FotoRow | undefined;
+      const fotoUrl = primeraFoto ? await obtenerUrlFirmadaFoto(primeraFoto.storage_path) : null;
+      const fotoEsPdf = primeraFoto?.mime_type === "application/pdf";
 
       setBlancos(acta.votos_blancos);
       setNulos(acta.votos_nulos);
       setTotalVotantes(acta.total_votantes ?? "");
-      setDatos({ acta, candidatos, votos, fotoUrl, submitter, coordinador, cambios });
+      setDatos({ acta, candidatos, votos, fotoUrl, fotoEsPdf, submitter, coordinador, cambios });
     } catch {
       setDatos("error");
     }
@@ -87,7 +115,7 @@ export function AuditoriaDetail() {
   if (datos === "cargando") return <div className="contenedor-panel">Cargando...</div>;
   if (datos === "error") return <div className="contenedor-panel">No se pudo cargar el acta.</div>;
 
-  const { acta, candidatos, votos, fotoUrl, submitter, coordinador, cambios } = datos;
+  const { acta, candidatos, votos, fotoUrl, fotoEsPdf, submitter, coordinador, cambios } = datos;
 
   async function handleGuardar() {
     setGuardando(true);
@@ -103,6 +131,23 @@ export function AuditoriaDetail() {
       mostrarError("No se pudieron guardar los cambios.");
     } finally {
       setGuardando(false);
+    }
+  }
+
+  async function handleSubirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0];
+    const input = e.target;
+    if (!archivo) return;
+    setSubiendoFoto(true);
+    try {
+      await subirFotoAuditoria({ actaId: acta.id, archivo, uploadedBy: perfilId });
+      await cargar();
+      mostrarExito("Foto/PDF reemplazado. Ya es el que se ve en captura y en auditoría.");
+    } catch {
+      mostrarError("No se pudo subir el archivo.");
+    } finally {
+      setSubiendoFoto(false);
+      input.value = "";
     }
   }
 
@@ -141,11 +186,30 @@ export function AuditoriaDetail() {
 
       <div className="auditoria-grid">
         <div className="auditoria-foto">
-          {fotoUrl ? (
-            <img src={fotoUrl} alt="Foto del acta" />
-          ) : (
-            <p className="nota-bloqueo">Todavía no se subió foto de esta acta.</p>
+          {fotoUrl && fotoEsPdf && (
+            <>
+              <iframe src={fotoUrl} title="PDF del acta" className="auditoria-foto-pdf" />
+              <a href={fotoUrl} target="_blank" rel="noreferrer" className="volver">
+                Abrir el PDF en una pestaña nueva
+              </a>
+            </>
           )}
+          {fotoUrl && !fotoEsPdf && <img src={fotoUrl} alt="Foto del acta" />}
+          {!fotoUrl && <p className="nota-bloqueo">Todavía no se subió foto de esta acta.</p>}
+
+          <label className="boton-secundario boton-chico boton-subir-foto-auditoria">
+            {subiendoFoto ? "Subiendo..." : fotoUrl ? "Reemplazar foto o PDF" : "Subir foto o PDF"}
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              disabled={subiendoFoto}
+              onChange={handleSubirFoto}
+              hidden
+            />
+          </label>
+          <p className="nota-bloqueo nota-subir-foto-auditoria">
+            Reemplaza lo que se ve en captura y en auditoría; no borra el historial de archivos anteriores.
+          </p>
         </div>
 
         <div className="auditoria-datos card">
@@ -232,12 +296,12 @@ export function AuditoriaDetail() {
 
       {cambios.length > 0 && (
         <div className="card">
-          <h3>Historial de correcciones</h3>
+          <h3>Historial de auditoría</h3>
           <ul className="lista-cambios">
             {cambios.map((c) => (
               <li key={c.id}>
-                <strong>{describirCampo(c.campo, candidatos)}</strong>: {c.valor_anterior} → {c.valor_nuevo} —{" "}
-                {c.perfiles?.nombres} {c.perfiles?.apellidos} ({new Date(c.changed_at).toLocaleString("es-EC")})
+                <strong>{describirCambio(c, candidatos)}</strong> — {c.perfiles?.nombres} {c.perfiles?.apellidos} (
+                {new Date(c.changed_at).toLocaleString("es-EC")})
               </li>
             ))}
           </ul>

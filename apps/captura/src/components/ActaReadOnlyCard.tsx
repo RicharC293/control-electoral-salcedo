@@ -50,6 +50,10 @@ export function ActaReadOnlyCard({
   soporteMensaje,
 }: Props) {
   const votosPorCandidato = new Map(votos.map((v) => [v.candidate_id, v.votos]));
+  // Una vez verificada, ya no tiene sentido dejar re-subir ni volver a pedir
+  // la foto/PDF firmado (ahorra esa carga), ni ofrecer contacto para
+  // reportar novedades sobre algo que auditoría ya revisó y aprobó.
+  const estaVerificada = acta.estado === "VERIFICADA";
 
   return (
     <div className="card card-solo-lectura">
@@ -70,13 +74,15 @@ export function ActaReadOnlyCard({
         <p className={`estado estado-${acta.estado.toLowerCase()}`}>{ESTADO_LABEL[acta.estado]}</p>
       )}
 
-      <PhotoUpload
-        actaId={acta.id}
-        perfilId={perfilId}
-        fotos={fotos}
-        fotoPendiente={fotoPendiente}
-        onSubida={onFotoSubida}
-      />
+      {!estaVerificada && (
+        <PhotoUpload
+          actaId={acta.id}
+          perfilId={perfilId}
+          fotos={fotos}
+          fotoPendiente={fotoPendiente}
+          onSubida={onFotoSubida}
+        />
+      )}
 
       <ul className="lista-votos">
         {candidatos.map((c) => (
@@ -106,11 +112,17 @@ export function ActaReadOnlyCard({
         <p>{acta.notas && acta.notas.trim() ? acta.notas : "Ninguna registrada."}</p>
       </div>
 
-      <p className="nota-bloqueo">
-        Ya registraste esta acta. Para evitar errores, no se puede volver a editar desde aquí.
-        Si algo está mal, repórtalo al equipo de auditoría:
-      </p>
-      <SoporteCard telefono={soporteTelefono} mensaje={soporteMensaje} />
+      {estaVerificada ? (
+        <p className="nota-bloqueo">Esta acta ya fue verificada por el equipo de auditoría.</p>
+      ) : (
+        <>
+          <p className="nota-bloqueo">
+            Ya registraste esta acta. Para evitar errores, no se puede volver a editar desde aquí.
+            Si algo está mal, repórtalo al equipo de auditoría:
+          </p>
+          <SoporteCard telefono={soporteTelefono} mensaje={soporteMensaje} />
+        </>
+      )}
     </div>
   );
 }

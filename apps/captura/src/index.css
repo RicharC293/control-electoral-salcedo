@@ -382,18 +382,59 @@ button:disabled {
 
 .boton-foto {
   display: block;
+  width: 100%;
   text-align: center;
   padding: 13px;
+  margin: 0;
   border-radius: var(--radio-chico);
   border: 1.5px dashed var(--color-texto-suave);
+  background: none;
   color: var(--color-texto);
   font-weight: 600;
   cursor: pointer;
   transition: border-color var(--transicion), background-color var(--transicion);
 }
 
-.boton-foto:hover {
+.boton-foto:hover:not(:disabled) {
   border-color: var(--color-primario);
+  background: var(--color-primario-suave);
+}
+
+.foto-acta-pdf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-chico);
+  color: var(--color-primario);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.foto-acta-pdf:hover {
+  background: var(--color-primario-suave);
+}
+
+.opciones-foto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.opcion-foto {
+  width: 100%;
+  margin: 0;
+  padding: 14px;
+  text-align: left;
+  background: var(--color-superficie-alt);
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.opcion-foto:hover:not(:disabled) {
   background: var(--color-primario-suave);
 }
 

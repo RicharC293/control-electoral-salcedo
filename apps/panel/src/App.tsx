@@ -55,7 +55,7 @@ function Contenido() {
       <Routes>
         <Route path="/" element={<Dashboard perfil={perfil} onSalir={cargarPerfil} />} />
         <Route path="/actas" element={<ActasList perfil={perfil} onSalir={cargarPerfil} />} />
-        <Route path="/actas/:id" element={<AuditoriaDetail />} />
+        <Route path="/actas/:id" element={<AuditoriaDetail perfilId={perfil.id} />} />
         {perfil.rol === "ADMIN" ? (
           <>
             <Route path="/admin/contiendas" element={<Contiendas rol={perfil.rol} />} />

@@ -165,13 +165,19 @@ export async function obtenerActasExistentes(mesaIds: string[], contestIds: stri
   return data as ActaRow[];
 }
 
-export type ActaFotoRow = { id: string; acta_id: string; storage_path: string; uploaded_at: string };
+export type ActaFotoRow = {
+  id: string;
+  acta_id: string;
+  storage_path: string;
+  uploaded_at: string;
+  mime_type: string | null;
+};
 
 export async function obtenerFotosDeActas(actaIds: string[]): Promise<ActaFotoRow[]> {
   if (actaIds.length === 0) return [];
   const { data, error } = await supabase
     .from("acta_fotos")
-    .select("id, acta_id, storage_path, uploaded_at")
+    .select("id, acta_id, storage_path, uploaded_at, mime_type")
     .in("acta_id", actaIds)
     .order("uploaded_at", { ascending: false });
   if (error) throw error;
@@ -184,7 +190,10 @@ export async function obtenerUrlFirmadaFoto(storagePath: string): Promise<string
   return data.signedUrl;
 }
 
+// Un PDF no se comprime (browser-image-compression solo entiende imágenes);
+// la foto de cámara/galería sí, para que quepa en conexiones lentas.
 export async function comprimirFoto(archivo: File): Promise<Blob> {
+  if (archivo.type === "application/pdf") return archivo;
   const { default: imageCompression } = await import("browser-image-compression");
   return imageCompression(archivo, {
     maxSizeMB: 0.8,
@@ -193,14 +202,28 @@ export async function comprimirFoto(archivo: File): Promise<Blob> {
   });
 }
 
-// Recibe la foto ya comprimida -- la compresión se hace al momento de tomar la
-// foto (sirve incluso sin conexión), la subida ocurre después, vía la cola.
-export async function subirFotoActa(input: { actaId: string; blob: Blob; uploadedBy: string }): Promise<void> {
-  const nombreArchivo = `${Date.now()}-${crypto.randomUUID()}.jpg`;
+const EXTENSION_POR_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/pdf": "pdf",
+};
+
+// Recibe la foto ya comprimida (o el PDF tal cual) -- eso ocurre al momento
+// de elegir el archivo (sirve incluso sin conexión), la subida ocurre
+// después, vía la cola.
+export async function subirFotoActa(input: {
+  actaId: string;
+  blob: Blob;
+  mimeType: string;
+  uploadedBy: string;
+}): Promise<void> {
+  const extension = EXTENSION_POR_MIME[input.mimeType] ?? "bin";
+  const nombreArchivo = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
   const storagePath = `${input.actaId}/${nombreArchivo}`;
 
   const { error: errUpload } = await supabase.storage.from("actas-fotos").upload(storagePath, input.blob, {
-    contentType: "image/jpeg",
+    contentType: input.mimeType,
   });
   if (errUpload) throw errUpload;
 
@@ -209,7 +232,7 @@ export async function subirFotoActa(input: { actaId: string; blob: Blob; uploade
     storage_path: storagePath,
     uploaded_by: input.uploadedBy,
     tamano_bytes: input.blob.size,
-    mime_type: "image/jpeg",
+    mime_type: input.mimeType,
   });
   if (errInsert) throw errInsert;
 }

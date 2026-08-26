@@ -21,6 +21,7 @@ export type FotoPendiente = {
   id: string; // uuid local
   actaId: string; // referencia estable al id de la acta, aunque aún no haya sincronizado
   blob: Blob;
+  mimeType: string; // "image/jpeg" (cámara/galería, ya comprimida) o "application/pdf"
   uploadedBy: string;
   createdAt: number;
   syncStatus: SyncStatus;

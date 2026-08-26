@@ -64,7 +64,7 @@ async function sincronizarFoto(foto: FotoPendiente): Promise<void> {
 
   await db.fotosPendientes.update(foto.id, { syncStatus: "SYNCING" });
   try {
-    await subirFotoActa({ actaId: foto.actaId, blob: foto.blob, uploadedBy: foto.uploadedBy });
+    await subirFotoActa({ actaId: foto.actaId, blob: foto.blob, mimeType: foto.mimeType, uploadedBy: foto.uploadedBy });
     await db.fotosPendientes.update(foto.id, { syncStatus: "SYNCED", errorMessage: undefined });
   } catch (err) {
     await db.fotosPendientes.update(foto.id, { syncStatus: "ERROR", errorMessage: mensajeError(err) });
@@ -87,7 +87,12 @@ export async function encolarActa(input: {
   return id;
 }
 
-export async function encolarFoto(input: { actaId: string; blob: Blob; uploadedBy: string }): Promise<void> {
+export async function encolarFoto(input: {
+  actaId: string;
+  blob: Blob;
+  mimeType: string;
+  uploadedBy: string;
+}): Promise<void> {
   const id = crypto.randomUUID();
   await db.fotosPendientes.add({ ...input, id, createdAt: Date.now(), syncStatus: "PENDING" });
   void sincronizarTodo();

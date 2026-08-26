@@ -26,7 +26,7 @@ export type CandidatoRow = {
 
 export type VotoRow = { candidate_id: string; votos: number };
 
-export type FotoRow = { id: string; storage_path: string; uploaded_at: string };
+export type FotoRow = { id: string; storage_path: string; uploaded_at: string; mime_type: string | null };
 
 export type ContactoRow = { id: string; nombres: string; apellidos: string; telefono: string | null };
 
@@ -71,7 +71,7 @@ export async function obtenerVotos(actaId: string): Promise<VotoRow[]> {
 export async function obtenerFotos(actaId: string): Promise<FotoRow[]> {
   const { data, error } = await supabase
     .from("acta_fotos")
-    .select("id, storage_path, uploaded_at")
+    .select("id, storage_path, uploaded_at, mime_type")
     .eq("acta_id", actaId)
     .order("uploaded_at", { ascending: false });
   if (error) throw error;
@@ -82,6 +82,36 @@ export async function obtenerUrlFirmadaFoto(storagePath: string): Promise<string
   const { data, error } = await supabase.storage.from("actas-fotos").createSignedUrl(storagePath, 60 * 10);
   if (error || !data) throw error ?? new Error("No se pudo generar el enlace de la foto.");
   return data.signedUrl;
+}
+
+const EXTENSION_POR_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/pdf": "pdf",
+};
+
+// Sube una foto o PDF desde el panel (corrección de auditoría). No borra ni
+// reemplaza la fila anterior -- inserta una nueva, que queda como la vigente
+// porque siempre se muestra la más reciente (order by uploaded_at desc). El
+// historial completo (quién subió qué y cuándo) queda intacto.
+export async function subirFotoAuditoria(input: { actaId: string; archivo: File; uploadedBy: string }): Promise<void> {
+  const extension = EXTENSION_POR_MIME[input.archivo.type] ?? "bin";
+  const storagePath = `${input.actaId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+  const { error: errUpload } = await supabase.storage.from("actas-fotos").upload(storagePath, input.archivo, {
+    contentType: input.archivo.type,
+  });
+  if (errUpload) throw errUpload;
+
+  const { error: errInsert } = await supabase.from("acta_fotos").insert({
+    acta_id: input.actaId,
+    storage_path: storagePath,
+    uploaded_by: input.uploadedBy,
+    tamano_bytes: input.archivo.size,
+    mime_type: input.archivo.type,
+  });
+  if (errInsert) throw errInsert;
 }
 
 export async function obtenerContacto(perfilId: string | null): Promise<ContactoRow | null> {
