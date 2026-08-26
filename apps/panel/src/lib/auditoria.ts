@@ -5,6 +5,8 @@ export type ActaDetalle = {
   estado: string;
   votos_blancos: number;
   votos_nulos: number;
+  total_votantes: number | null;
+  notas: string | null;
   submitted_at: string;
   verified_at: string | null;
   mesa_id: string;
@@ -41,7 +43,7 @@ export async function obtenerActaDetalle(actaId: string): Promise<ActaDetalle> {
   const { data, error } = await supabase
     .from("actas")
     .select(
-      "id, estado, votos_blancos, votos_nulos, submitted_at, verified_at, mesa_id, contest_id, submitted_by, mesas ( numero_mesa, numero_junta_oficial, recinto_id, recintos ( nombre ) ), contests ( nombre, tipo )"
+      "id, estado, votos_blancos, votos_nulos, total_votantes, notas, submitted_at, verified_at, mesa_id, contest_id, submitted_by, mesas ( numero_mesa, numero_junta_oficial, recinto_id, recintos ( nombre ) ), contests ( nombre, tipo )"
     )
     .eq("id", actaId)
     .single();
@@ -123,6 +125,11 @@ export async function guardarVotoCandidato(actaId: string, candidateId: string, 
 
 export async function guardarBlancosNulos(actaId: string, votosBlancos: number, votosNulos: number): Promise<void> {
   const { error } = await supabase.from("actas").update({ votos_blancos: votosBlancos, votos_nulos: votosNulos }).eq("id", actaId);
+  if (error) throw error;
+}
+
+export async function guardarTotalVotantes(actaId: string, totalVotantes: number | null): Promise<void> {
+  const { error } = await supabase.from("actas").update({ total_votantes: totalVotantes }).eq("id", actaId);
   if (error) throw error;
 }
 

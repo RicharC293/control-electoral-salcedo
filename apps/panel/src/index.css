@@ -271,6 +271,21 @@ a {
   color: var(--color-error);
 }
 
+.estado-no-recibida {
+  background: var(--color-superficie-alt);
+  color: var(--color-texto-suave);
+}
+
+.badge-alerta {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--color-error-suave);
+  color: var(--color-error);
+}
+
 .volver {
   display: inline-block;
   margin-bottom: 16px;

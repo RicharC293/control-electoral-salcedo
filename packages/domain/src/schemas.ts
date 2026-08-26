@@ -48,6 +48,8 @@ export const actaFormSchema = z.object({
   contest_id: z.string().uuid(),
   votos_blancos: z.number().int().min(0),
   votos_nulos: z.number().int().min(0),
+  total_votantes: z.number().int().min(0),
+  novedades: z.string(),
   votos: z.array(votoCandidatoSchema).min(1),
 });
 export type ActaForm = z.infer<typeof actaFormSchema>;
@@ -59,6 +61,7 @@ export const actaSchema = z.object({
   estado: z.enum(ACTA_ESTADOS),
   votos_blancos: z.number().int(),
   votos_nulos: z.number().int(),
+  total_votantes: z.number().int().nullable(),
   submitted_by: z.string().uuid().nullable(),
   submitted_at: z.string(),
   verified_by: z.string().uuid().nullable(),

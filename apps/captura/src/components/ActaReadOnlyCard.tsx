@@ -1,5 +1,4 @@
-import { formatearMesa } from "@control-electoral/domain";
-import type { ActaFotoRow, ActaRow, ActaVotoRow, CandidateRow, ContestRow, MesaRow } from "../lib/queries";
+import type { ActaFotoRow, ActaRow, ActaVotoRow, CandidateRow, ContestRow } from "../lib/queries";
 import type { FotoPendiente, SyncStatus } from "../lib/db";
 import { PhotoUpload } from "./PhotoUpload";
 import { SoporteCard } from "./SoporteCard";
@@ -11,7 +10,6 @@ export type SyncPendiente = {
 };
 
 type Props = {
-  mesa: MesaRow;
   contest: ContestRow;
   acta: ActaRow;
   candidatos: CandidateRow[];
@@ -39,7 +37,6 @@ const SYNC_LABEL: Record<Exclude<SyncStatus, "SYNCED">, string> = {
 };
 
 export function ActaReadOnlyCard({
-  mesa,
   contest,
   acta,
   candidatos,
@@ -56,9 +53,6 @@ export function ActaReadOnlyCard({
 
   return (
     <div className="card card-solo-lectura">
-      <p className="etiqueta-mesa">
-        {mesa.recinto_nombre} · {formatearMesa(mesa)}
-      </p>
       <h3>{contest.nombre}</h3>
 
       {syncPendiente ? (
@@ -101,7 +95,16 @@ export function ActaReadOnlyCard({
           <span>Votos en blanco</span>
           <strong>{acta.votos_blancos}</strong>
         </li>
+        <li>
+          <span>Total de votos</span>
+          <strong>{acta.total_votantes ?? "-"}</strong>
+        </li>
       </ul>
+
+      <div className="bloque-novedades">
+        <p className="etiqueta-mesa">Novedades</p>
+        <p>{acta.notas && acta.notas.trim() ? acta.notas : "Ninguna registrada."}</p>
+      </div>
 
       <p className="nota-bloqueo">
         Ya registraste esta acta. Para evitar errores, no se puede volver a editar desde aquí.

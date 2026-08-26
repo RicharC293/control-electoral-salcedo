@@ -41,6 +41,8 @@ async function sincronizarActa(acta: ActaPendiente): Promise<void> {
       contestId: acta.contestId,
       votosBlancos: acta.votosBlancos,
       votosNulos: acta.votosNulos,
+      totalVotantes: acta.totalVotantes,
+      novedades: acta.novedades,
       votosPorCandidato: acta.votos.map((v) => ({ candidateId: v.candidateId, votos: v.votos })),
       submittedBy: acta.submittedBy,
     });
@@ -74,6 +76,8 @@ export async function encolarActa(input: {
   contestId: string;
   votosBlancos: number;
   votosNulos: number;
+  totalVotantes: number;
+  novedades: string;
   votos: { candidateId: string; votos: number }[];
   submittedBy: string;
 }): Promise<string> {

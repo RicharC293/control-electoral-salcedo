@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   guardarBlancosNulos,
+  guardarTotalVotantes,
   guardarVotoCandidato,
   obtenerActaDetalle,
   obtenerCambios,
@@ -36,6 +37,7 @@ const PREFIJO_VOTO_CANDIDATO = "voto_candidato:";
 function describirCampo(campo: string, candidatos: CandidatoRow[]): string {
   if (campo === "votos_blancos") return "Votos en blanco";
   if (campo === "votos_nulos") return "Votos nulos";
+  if (campo === "total_votantes") return "Total de votos";
   if (campo.startsWith(PREFIJO_VOTO_CANDIDATO)) {
     const candidateId = campo.slice(PREFIJO_VOTO_CANDIDATO.length);
     const candidato = candidatos.find((c) => c.id === candidateId);
@@ -50,6 +52,7 @@ export function AuditoriaDetail() {
   const [datos, setDatos] = useState<Datos | "cargando" | "error">("cargando");
   const [blancos, setBlancos] = useState(0);
   const [nulos, setNulos] = useState(0);
+  const [totalVotantes, setTotalVotantes] = useState<number | "">("");
   const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -70,6 +73,7 @@ export function AuditoriaDetail() {
 
       setBlancos(acta.votos_blancos);
       setNulos(acta.votos_nulos);
+      setTotalVotantes(acta.total_votantes ?? "");
       setDatos({ acta, candidatos, votos, fotoUrl, submitter, coordinador, cambios });
     } catch {
       setDatos("error");
@@ -89,6 +93,7 @@ export function AuditoriaDetail() {
     setGuardando(true);
     try {
       await guardarBlancosNulos(acta.id, blancos, nulos);
+      await guardarTotalVotantes(acta.id, totalVotantes === "" ? null : totalVotantes);
       for (const c of candidatos) {
         await guardarVotoCandidato(acta.id, c.id, votos[c.id] ?? 0);
       }
@@ -171,11 +176,25 @@ export function AuditoriaDetail() {
             <span>Votos en blanco</span>
             <input type="number" min={0} value={blancos} onChange={(e) => setBlancos(Number(e.target.value))} />
           </label>
+          <label className="campo-voto">
+            <span>Total de votos</span>
+            <input
+              type="number"
+              min={0}
+              value={totalVotantes}
+              onChange={(e) => setTotalVotantes(e.target.value === "" ? "" : Number(e.target.value))}
+            />
+          </label>
 
           <button disabled={guardando} onClick={handleGuardar}>
             {guardando ? "Guardando..." : "Guardar correcciones"}
           </button>
         </div>
+      </div>
+
+      <div className="card">
+        <h3>Novedades reportadas</h3>
+        <p>{acta.notas && acta.notas.trim() ? acta.notas : "Ninguna registrada."}</p>
       </div>
 
       <div className="card">

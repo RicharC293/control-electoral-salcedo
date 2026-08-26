@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "layout-transition",
+        "value": "width 300ms ease-out",
+        "files": [
+          "apps/panel/src/index.css"
+        ],
+        "createdAt": "2026-08-26T04:52:04.483Z",
+        "reason": "pre-existing barra-candidato-fill progress bar, out of scope for this session, isolated small element"
+      },
+      {
+        "rule": "layout-transition",
+        "value": "width var(--transicion)",
+        "files": [
+          "apps/panel/src/index.css"
+        ],
+        "createdAt": "2026-08-26T04:52:04.626Z",
+        "reason": "pre-existing barra-cobertura-relleno progress bar, out of scope for this session, isolated small element"
+      }
+    ]
+  }
+}

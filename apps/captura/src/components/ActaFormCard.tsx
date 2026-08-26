@@ -1,4 +1,3 @@
-import { formatearMesa } from "@control-electoral/domain";
 import { useState } from "react";
 import type { CandidateRow, MesaRow, ContestRow } from "../lib/queries";
 import { encolarActa } from "../lib/sync";
@@ -19,9 +18,20 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
   );
   const [blancos, setBlancos] = useState(0);
   const [nulos, setNulos] = useState(0);
+  const [totalVotantes, setTotalVotantes] = useState("");
+  const [novedades, setNovedades] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   async function handleRegistrar() {
+    const totalVotantesNum = Number(totalVotantes);
+    if (totalVotantes.trim() === "" || Number.isNaN(totalVotantesNum) || totalVotantesNum < 0) {
+      mostrarError("Ingresa el total de votos de esta junta.");
+      return;
+    }
+    if (novedades.trim() === "") {
+      mostrarError('Ingresa "Ninguna" u otra novedad en el campo de Novedades.');
+      return;
+    }
     setGuardando(true);
     try {
       // Se guarda primero en la cola local (funciona sin conexión) y se
@@ -31,6 +41,8 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
         contestId: contest.id,
         votosBlancos: blancos,
         votosNulos: nulos,
+        totalVotantes: totalVotantesNum,
+        novedades: novedades.trim(),
         votos: candidatos.map((c) => ({ candidateId: c.id, votos: votos[c.id] ?? 0 })),
         submittedBy: perfilId,
       });
@@ -44,9 +56,6 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
 
   return (
     <div className="card">
-      <p className="etiqueta-mesa">
-        {mesa.recinto_nombre} · {formatearMesa(mesa)}
-      </p>
       <h3>{contest.nombre}</h3>
 
       {candidatos.map((c) => (
@@ -82,6 +91,27 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           min={0}
           value={blancos}
           onChange={(e) => setBlancos(Number(e.target.value))}
+        />
+      </label>
+      <label className="campo-voto">
+        <span>Total de votos</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          required
+          value={totalVotantes}
+          onChange={(e) => setTotalVotantes(e.target.value)}
+        />
+      </label>
+      <label className="campo-textarea">
+        <span>Novedades</span>
+        <textarea
+          required
+          rows={3}
+          placeholder="Ej: Ninguna"
+          value={novedades}
+          onChange={(e) => setNovedades(e.target.value)}
         />
       </label>
 

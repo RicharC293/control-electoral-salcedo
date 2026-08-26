@@ -9,3 +9,20 @@ export function formatearMesa(mesa: { numero_mesa: number; numero_junta_oficial?
     ? `Mesa ${mesa.numero_mesa} — Junta ${mesa.numero_junta_oficial}`
     : `Mesa ${mesa.numero_mesa}`;
 }
+
+export const SEXO_LABEL: Record<"F" | "M", string> = { F: "Femenino", M: "Masculino" };
+
+// Solo el número real de junta, sin el sexo -- para el menú de captura, donde
+// el sexo ya lo dice el encabezado de sección (Masculino/Femenino) y el color
+// del botón, así que repetirlo en cada fila sería ruido.
+export function numeroJunta(mesa: { numero_junta_oficial: string | null }): string {
+  return mesa.numero_junta_oficial ?? "Pendiente";
+}
+
+// Para la ficha de la JRV en captura (fuera del contexto de una lista
+// agrupada por sexo): el número real de junta (el mismo que usa
+// formatearMesa) junto al sexo, que es como el veedor identifica su junta en
+// el papel físico.
+export function formatearJunta(mesa: { numero_junta_oficial: string | null; sexo: "F" | "M" }): string {
+  return `${numeroJunta(mesa)} — ${SEXO_LABEL[mesa.sexo]}`;
+}

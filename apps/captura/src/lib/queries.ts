@@ -16,6 +16,11 @@ export type MesaRow = {
   recinto_id: string;
   recinto_nombre: string;
   numero_junta_oficial: string | null;
+  sexo: "F" | "M";
+  provincia_nombre: string;
+  canton_nombre: string;
+  parroquia_nombre: string;
+  zona_nombre: string | null;
 };
 export type ParroquiaRow = { id: string; nombre: string; es_urbana: boolean };
 export type ContestRow = {
@@ -41,6 +46,8 @@ export type ActaRow = {
   estado: "BORRADOR" | "ENVIADA" | "VERIFICADA" | "RECHAZADA";
   votos_blancos: number;
   votos_nulos: number;
+  total_votantes: number | null;
+  notas: string | null;
 };
 
 export async function obtenerPerfilActual(): Promise<PerfilRow> {
@@ -55,8 +62,23 @@ export async function obtenerPerfilActual(): Promise<PerfilRow> {
   return data as PerfilRow;
 }
 
+const SELECT_MESAS =
+  "id, numero_mesa, recinto_id, numero_junta_oficial, sexo, " +
+  "recintos ( nombre, zonas ( nombre ), parroquias ( nombre, cantones ( nombre, provincias ( nombre ) ) ) )";
+
 function mapearMesas(
-  data: { id: string; numero_mesa: number; recinto_id: string; numero_junta_oficial: string | null; recintos: { nombre: string } }[]
+  data: {
+    id: string;
+    numero_mesa: number;
+    recinto_id: string;
+    numero_junta_oficial: string | null;
+    sexo: "F" | "M";
+    recintos: {
+      nombre: string;
+      zonas: { nombre: string | null } | null;
+      parroquias: { nombre: string; cantones: { nombre: string; provincias: { nombre: string } } };
+    };
+  }[]
 ): MesaRow[] {
   return data.map((m) => ({
     id: m.id,
@@ -64,22 +86,24 @@ function mapearMesas(
     recinto_id: m.recinto_id,
     recinto_nombre: m.recintos.nombre,
     numero_junta_oficial: m.numero_junta_oficial,
+    sexo: m.sexo,
+    provincia_nombre: m.recintos.parroquias.cantones.provincias.nombre,
+    canton_nombre: m.recintos.parroquias.cantones.nombre,
+    parroquia_nombre: m.recintos.parroquias.nombre,
+    zona_nombre: m.recintos.zonas?.nombre ?? null,
   }));
 }
 
 export async function obtenerMesasAsignadas(perfil: PerfilRow): Promise<MesaRow[]> {
   if (perfil.rol === "VEEDOR" && perfil.mesa_id) {
-    const { data, error } = await supabase
-      .from("mesas")
-      .select("id, numero_mesa, recinto_id, numero_junta_oficial, recintos ( nombre )")
-      .eq("id", perfil.mesa_id);
+    const { data, error } = await supabase.from("mesas").select(SELECT_MESAS).eq("id", perfil.mesa_id);
     if (error) throw error;
     return mapearMesas(data as unknown as Parameters<typeof mapearMesas>[0]);
   }
   if (perfil.rol === "COORDINADOR" && perfil.recinto_id) {
     const { data, error } = await supabase
       .from("mesas")
-      .select("id, numero_mesa, recinto_id, numero_junta_oficial, recintos ( nombre )")
+      .select(SELECT_MESAS)
       .eq("recinto_id", perfil.recinto_id)
       .order("numero_mesa");
     if (error) throw error;
@@ -130,7 +154,7 @@ export async function obtenerActasExistentes(mesaIds: string[], contestIds: stri
   if (mesaIds.length === 0 || contestIds.length === 0) return [];
   const { data, error } = await supabase
     .from("actas")
-    .select("id, mesa_id, contest_id, estado, votos_blancos, votos_nulos")
+    .select("id, mesa_id, contest_id, estado, votos_blancos, votos_nulos, total_votantes, notas")
     .in("mesa_id", mesaIds)
     .in("contest_id", contestIds);
   if (error) throw error;
@@ -231,6 +255,8 @@ export async function registrarActa(input: {
   contestId: string;
   votosBlancos: number;
   votosNulos: number;
+  totalVotantes: number;
+  novedades: string;
   votosPorCandidato: { candidateId: string; votos: number }[];
   submittedBy: string;
 }): Promise<void> {
@@ -240,6 +266,8 @@ export async function registrarActa(input: {
     contest_id: input.contestId,
     votos_blancos: input.votosBlancos,
     votos_nulos: input.votosNulos,
+    total_votantes: input.totalVotantes,
+    notas: input.novedades.trim() || null,
     submitted_by: input.submittedBy,
   });
   if (errActa && !esErrorDuplicado(errActa)) throw errActa;

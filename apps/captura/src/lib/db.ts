@@ -8,6 +8,8 @@ export type ActaPendiente = {
   contestId: string;
   votosBlancos: number;
   votosNulos: number;
+  totalVotantes: number;
+  novedades: string;
   votos: { candidateId: string; votos: number }[];
   submittedBy: string;
   createdAt: number;
