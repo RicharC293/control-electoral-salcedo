@@ -123,10 +123,14 @@ export async function obtenerParroquiaDeRecinto(recintoId: string): Promise<Parr
 }
 
 export async function obtenerContiendasActivas(parroquia: ParroquiaRow): Promise<ContestRow[]> {
+  // orden respeta la jerarquía configurada en el panel (Contiendas): Prefecto,
+  // Alcalde, Concejal Urbano, Concejal Rural, Junta Parroquial por defecto --
+  // es el mismo orden en que aparece el selector de contiendas en captura.
   const { data, error } = await supabase
     .from("contests")
     .select("id, tipo, nombre, parroquia_id, activo")
-    .eq("activo", true);
+    .eq("activo", true)
+    .order("orden");
   if (error) throw error;
   return (data as ContestRow[]).filter(
     (c) =>

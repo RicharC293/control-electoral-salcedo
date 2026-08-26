@@ -499,6 +499,71 @@ button:disabled {
   box-shadow: var(--anillo-foco);
 }
 
+.campo-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--color-borde);
+  cursor: pointer;
+}
+
+.campo-toggle-texto {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.interruptor {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.interruptor input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.interruptor-pista {
+  position: absolute;
+  inset: 0;
+  background: var(--color-borde);
+  border-radius: 999px;
+  transition: background-color var(--transicion);
+}
+
+.interruptor-circulo {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--sombra-suave);
+  transition: transform var(--transicion);
+}
+
+.interruptor input:checked ~ .interruptor-pista {
+  background: var(--color-primario);
+}
+
+.interruptor input:checked ~ .interruptor-pista .interruptor-circulo {
+  transform: translateX(20px);
+}
+
+.interruptor input:focus-visible ~ .interruptor-pista {
+  box-shadow: var(--anillo-foco);
+}
+
 .bloque-novedades {
   margin: 4px 0 14px;
 }

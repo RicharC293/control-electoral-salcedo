@@ -22,9 +22,15 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
   const [blancos, setBlancos] = useState("");
   const [nulos, setNulos] = useState("");
   const [totalVotantes, setTotalVotantes] = useState("");
+  const [tieneNovedades, setTieneNovedades] = useState(false);
   const [novedades, setNovedades] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+
+  function handleToggleNovedades(activo: boolean) {
+    setTieneNovedades(activo);
+    if (!activo) setNovedades("");
+  }
 
   function handleRevisar() {
     const totalVotantesNum = Number(totalVotantes);
@@ -32,8 +38,8 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
       mostrarError("Ingresa el total de votos de esta junta.");
       return;
     }
-    if (novedades.trim() === "") {
-      mostrarError('Ingresa "Ninguna" u otra novedad en el campo de Novedades.');
+    if (tieneNovedades && novedades.trim() === "") {
+      mostrarError("Describe la novedad, o desactiva el interruptor si ya no aplica.");
       return;
     }
     setMostrarConfirmacion(true);
@@ -50,7 +56,7 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
         votosBlancos: Number(blancos) || 0,
         votosNulos: Number(nulos) || 0,
         totalVotantes: Number(totalVotantes),
-        novedades: novedades.trim(),
+        novedades: tieneNovedades ? novedades.trim() : "",
         votos: candidatos.map((c) => ({ candidateId: c.id, votos: Number(votos[c.id]) || 0 })),
         submittedBy: perfilId,
       });
@@ -117,16 +123,32 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           onChange={(e) => setTotalVotantes(e.target.value)}
         />
       </label>
-      <label className="campo-textarea">
-        <span>Novedades</span>
-        <textarea
-          required
-          rows={3}
-          placeholder="Ej: Ninguna"
-          value={novedades}
-          onChange={(e) => setNovedades(e.target.value)}
-        />
+      <label className="campo-toggle">
+        <span className="campo-toggle-texto">¿Hubo novedades en esta junta?</span>
+        <span className="interruptor">
+          <input
+            type="checkbox"
+            checked={tieneNovedades}
+            onChange={(e) => handleToggleNovedades(e.target.checked)}
+          />
+          <span className="interruptor-pista">
+            <span className="interruptor-circulo" />
+          </span>
+        </span>
       </label>
+
+      {tieneNovedades && (
+        <label className="campo-textarea">
+          <span>Novedades</span>
+          <textarea
+            required
+            rows={3}
+            placeholder="Describe la novedad"
+            value={novedades}
+            onChange={(e) => setNovedades(e.target.value)}
+          />
+        </label>
+      )}
 
       <button disabled={guardando} onClick={handleRevisar}>
         Registrar
@@ -162,7 +184,9 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
             </ul>
 
             <p className="modal-novedades-etiqueta">Novedades</p>
-            <p className="modal-novedades-texto">{novedades.trim()}</p>
+            <p className="modal-novedades-texto">
+              {tieneNovedades ? novedades.trim() : "Sin novedades"}
+            </p>
 
             <p className="modal-advertencia">Una vez enviada, esta acta no se puede volver a editar.</p>
 

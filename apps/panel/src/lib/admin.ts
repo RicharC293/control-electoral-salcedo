@@ -8,13 +8,14 @@ export type ContestAdmin = {
   parroquia_id: string | null;
   activo: boolean;
   numero_dignidades: number;
+  orden: number;
 };
 
 export async function listarContests(): Promise<ContestAdmin[]> {
   const { data, error } = await supabase
     .from("contests")
-    .select("id, tipo, nombre, parroquia_id, activo, numero_dignidades")
-    .order("tipo");
+    .select("id, tipo, nombre, parroquia_id, activo, numero_dignidades, orden")
+    .order("orden");
   if (error) throw error;
   return data as ContestAdmin[];
 }
@@ -26,6 +27,13 @@ export async function actualizarContestActivo(id: string, activo: boolean): Prom
 
 export async function actualizarNumeroDignidades(id: string, numeroDignidades: number): Promise<void> {
   const { error } = await supabase.from("contests").update({ numero_dignidades: numeroDignidades }).eq("id", id);
+  if (error) throw error;
+}
+
+// Orden en que aparecen las contiendas en el panel y en el selector de
+// captura (cuando una junta tiene más de una contienda aplicable).
+export async function actualizarOrdenContest(id: string, orden: number): Promise<void> {
+  const { error } = await supabase.from("contests").update({ orden }).eq("id", id);
   if (error) throw error;
 }
 

@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminNav } from "./AdminNav";
-import { actualizarContestActivo, actualizarNumeroDignidades, listarContests, type ContestAdmin } from "../../lib/admin";
+import {
+  actualizarContestActivo,
+  actualizarNumeroDignidades,
+  actualizarOrdenContest,
+  listarContests,
+  type ContestAdmin,
+} from "../../lib/admin";
 import { useToast } from "../../lib/toast";
 
 const TIPO_LABEL: Record<string, string> = {
@@ -50,6 +56,18 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
     }
   }
 
+  async function moverContest(c: ContestAdmin, direccion: -1 | 1) {
+    const indice = contests.findIndex((x) => x.id === c.id);
+    const vecino = contests[indice + direccion];
+    if (!vecino) return;
+    try {
+      await Promise.all([actualizarOrdenContest(c.id, vecino.orden), actualizarOrdenContest(vecino.id, c.orden)]);
+      cargar();
+    } catch {
+      mostrarError("No se pudo actualizar el orden.");
+    }
+  }
+
   return (
     <div className="contenedor-panel">
       <AdminNav rol={rol} />
@@ -58,7 +76,9 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
         Habilita o deshabilita qué contiendas se controlan. Al desactivar una, desaparece del selector del
         dashboard y del formulario de captura para las mesas que le aplican. En Concejal Urbano/Rural y Junta
         Parroquial, el número de dignidades determina cuántos escaños se reparten con el método configurado en{" "}
-        <Link to="/admin/configuraciones">Configuraciones</Link>.
+        <Link to="/admin/configuraciones">Configuraciones</Link>. El orden de la lista es el mismo en que se van
+        a mostrar en captura cuando una junta tenga más de una contienda aplicable -- usa las flechas para
+        ajustarlo.
       </p>
 
       {cargando ? (
@@ -67,6 +87,7 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
         <table className="tabla-actas">
           <thead>
             <tr>
+              <th>Orden</th>
               <th>Tipo</th>
               <th>Nombre</th>
               <th>Dignidades</th>
@@ -74,8 +95,30 @@ export function Contiendas({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
             </tr>
           </thead>
           <tbody>
-            {contests.map((c) => (
+            {contests.map((c, indice) => (
               <tr key={c.id}>
+                <td>
+                  <div className="candidato-orden-botones">
+                    <button
+                      type="button"
+                      className="boton-orden"
+                      disabled={indice === 0}
+                      onClick={() => moverContest(c, -1)}
+                      aria-label={`Mover ${c.nombre} hacia arriba`}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="boton-orden"
+                      disabled={indice === contests.length - 1}
+                      onClick={() => moverContest(c, 1)}
+                      aria-label={`Mover ${c.nombre} hacia abajo`}
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </td>
                 <td>{TIPO_LABEL[c.tipo] ?? c.tipo}</td>
                 <td>{c.nombre}</td>
                 <td>
