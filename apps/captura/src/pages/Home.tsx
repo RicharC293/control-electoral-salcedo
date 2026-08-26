@@ -46,6 +46,14 @@ type Estado =
 
 const claveMesaContest = (mesaId: string, contestId: string) => `${mesaId}-${contestId}`;
 
+type EstadoJunta = "pendiente" | "falta-foto" | "completado";
+
+const ESTADO_JUNTA_LABEL: Record<EstadoJunta, string> = {
+  pendiente: "Pendiente",
+  "falta-foto": "Falta fotografía",
+  completado: "Completado",
+};
+
 export function Home() {
   const [estado, setEstado] = useState<Estado>({ paso: "cargando" });
   const [actasPendientes, setActasPendientes] = useState<ActaPendiente[]>([]);
@@ -233,6 +241,32 @@ export function Home() {
   const mesasFemenino = mesasVisibles.filter((m) => m.sexo === "F");
   const mesaParaFicha = mesasVisibles[0] ?? null;
 
+  // Pendiente: ninguna contienda aplicable tiene acta enviada todavía.
+  // Falta fotografía: ya se enviaron todas, pero a alguna le falta la foto.
+  // Completado: todas enviadas y todas con foto.
+  function estadoJunta(mesa: MesaRow): EstadoJunta {
+    if (contests.length === 0) return "pendiente";
+    let todasEnviadas = true;
+    let todasConFoto = true;
+    for (const contest of contests) {
+      const clave = claveMesaContest(mesa.id, contest.id);
+      const actaId = actaServidorPorClave.get(clave)?.id ?? actaLocalPorClave.get(clave)?.id;
+      if (!actaId) {
+        todasEnviadas = false;
+        continue;
+      }
+      const tieneFoto = fotos.some((f) => f.acta_id === actaId) || fotosPendientes.some((f) => f.actaId === actaId);
+      if (!tieneFoto) todasConFoto = false;
+    }
+    if (!todasEnviadas) return "pendiente";
+    return todasConFoto ? "completado" : "falta-foto";
+  }
+
+  const esCoordinador = perfil.rol === "COORDINADOR";
+  const totalJuntas = mesasVisibles.length;
+  const juntasCompletadas = mesasVisibles.filter((m) => estadoJunta(m) === "completado").length;
+  const progresoPct = totalJuntas > 0 ? Math.round((juntasCompletadas / totalJuntas) * 100) : 0;
+
   function abrirJunta(mesa: MesaRow) {
     setMesaSeleccionadaId(mesa.id);
     setContestActivoId(contests[0]?.id ?? "");
@@ -409,6 +443,21 @@ export function Home() {
         </>
       ) : (
         <>
+          {esCoordinador && totalJuntas > 0 && (
+            <div className="progreso-avance">
+              <div className="progreso-avance-encabezado">
+                <span>Avance de la subida</span>
+                <span className="progreso-avance-pct">{progresoPct}%</span>
+              </div>
+              <div className="barra-progreso">
+                <div className="barra-progreso-relleno" style={{ width: `${progresoPct}%` }} />
+              </div>
+              <p className="progreso-avance-detalle">
+                {juntasCompletadas} de {totalJuntas} juntas completadas
+              </p>
+            </div>
+          )}
+
           {mesaParaFicha && (
             <dl className="ficha-jrv card">
               <div>
@@ -436,19 +485,27 @@ export function Home() {
             <section className="seccion-jrv">
               <h2 className="titulo-seccion-jrv">Masculino</h2>
               <ul className="menu-jrv">
-                {mesasMasculino.map((mesa) => (
-                  <li key={mesa.id}>
-                    <button
-                      type="button"
-                      className="item-jrv item-jrv-masculino"
-                      aria-label={`Junta ${formatearJunta(mesa)}`}
-                      onClick={() => abrirJunta(mesa)}
-                    >
-                      <span className="item-jrv-numero">{numeroJunta(mesa)}</span>
-                      <span className="item-jrv-sexo">Masculino</span>
-                    </button>
-                  </li>
-                ))}
+                {mesasMasculino.map((mesa) => {
+                  const estado = estadoJunta(mesa);
+                  return (
+                    <li key={mesa.id}>
+                      <button
+                        type="button"
+                        className="item-jrv item-jrv-masculino"
+                        aria-label={`Junta ${formatearJunta(mesa)} -- ${ESTADO_JUNTA_LABEL[estado]}`}
+                        onClick={() => abrirJunta(mesa)}
+                      >
+                        <span className="item-jrv-info">
+                          <span className="item-jrv-numero">{numeroJunta(mesa)}</span>
+                          <span className="item-jrv-sexo">Masculino</span>
+                        </span>
+                        <span className={`item-jrv-estado item-jrv-estado-${estado}`}>
+                          {ESTADO_JUNTA_LABEL[estado]}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
@@ -457,19 +514,27 @@ export function Home() {
             <section className="seccion-jrv">
               <h2 className="titulo-seccion-jrv">Femenino</h2>
               <ul className="menu-jrv">
-                {mesasFemenino.map((mesa) => (
-                  <li key={mesa.id}>
-                    <button
-                      type="button"
-                      className="item-jrv item-jrv-femenino"
-                      aria-label={`Junta ${formatearJunta(mesa)}`}
-                      onClick={() => abrirJunta(mesa)}
-                    >
-                      <span className="item-jrv-numero">{numeroJunta(mesa)}</span>
-                      <span className="item-jrv-sexo">Femenino</span>
-                    </button>
-                  </li>
-                ))}
+                {mesasFemenino.map((mesa) => {
+                  const estado = estadoJunta(mesa);
+                  return (
+                    <li key={mesa.id}>
+                      <button
+                        type="button"
+                        className="item-jrv item-jrv-femenino"
+                        aria-label={`Junta ${formatearJunta(mesa)} -- ${ESTADO_JUNTA_LABEL[estado]}`}
+                        onClick={() => abrirJunta(mesa)}
+                      >
+                        <span className="item-jrv-info">
+                          <span className="item-jrv-numero">{numeroJunta(mesa)}</span>
+                          <span className="item-jrv-sexo">Femenino</span>
+                        </span>
+                        <span className={`item-jrv-estado item-jrv-estado-${estado}`}>
+                          {ESTADO_JUNTA_LABEL[estado]}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}

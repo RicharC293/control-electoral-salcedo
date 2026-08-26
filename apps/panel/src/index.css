@@ -1238,6 +1238,17 @@ a {
   color: var(--color-texto);
 }
 
+.campo-soporte {
+  max-width: 320px;
+  margin-bottom: 16px;
+}
+
+.campo-soporte input {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
 .input-dignidades {
   width: 64px;
   padding: 6px 8px;

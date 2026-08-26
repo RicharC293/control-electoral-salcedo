@@ -12,7 +12,7 @@ export function SoporteCard({ telefono, mensaje }: Props) {
   return (
     <div className="soporte-card">
       <a href={waHref} target="_blank" rel="noreferrer" className="boton-soporte">
-        Reportar novedad por WhatsApp
+        Contactar por WhatsApp
       </a>
       <a href={`tel:${telefonoLimpio}`} className="boton-soporte boton-soporte-secundario">
         Llamar a soporte ({telefono})

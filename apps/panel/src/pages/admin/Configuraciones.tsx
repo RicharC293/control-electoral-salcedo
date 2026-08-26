@@ -5,8 +5,10 @@ import { ejecutarLimpieza, type AccionLimpieza } from "../../lib/admin";
 import {
   actualizarColorSemilla,
   actualizarMetodoReparto,
+  actualizarSoporteTelefono,
   obtenerColorSemilla,
   obtenerMetodoReparto,
+  obtenerSoporteTelefono,
 } from "../../lib/config";
 import { useToast } from "../../lib/toast";
 
@@ -51,18 +53,21 @@ export function Configuraciones({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
   const { mostrarExito, mostrarError } = useToast();
   const [color, setColor] = useState(AZUL_POR_DEFECTO);
   const [metodoReparto, setMetodoReparto] = useState<MetodoReparto>("DHONT");
+  const [soporteTelefono, setSoporteTelefono] = useState("");
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [guardandoMetodo, setGuardandoMetodo] = useState(false);
+  const [guardandoSoporte, setGuardandoSoporte] = useState(false);
   const [accionPendiente, setAccionPendiente] = useState<AccionPeligro | null>(null);
   const [textoConfirmacion, setTextoConfirmacion] = useState("");
   const [ejecutando, setEjecutando] = useState(false);
 
   useEffect(() => {
-    Promise.all([obtenerColorSemilla(), obtenerMetodoReparto()])
-      .then(([c, m]) => {
+    Promise.all([obtenerColorSemilla(), obtenerMetodoReparto(), obtenerSoporteTelefono()])
+      .then(([c, m, s]) => {
         setColor(c ?? AZUL_POR_DEFECTO);
         setMetodoReparto(m);
+        setSoporteTelefono(s ?? "");
       })
       .finally(() => setCargando(false));
   }, []);
@@ -109,6 +114,18 @@ export function Configuraciones({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
       mostrarError("No se pudo actualizar el método de reparto.");
     } finally {
       setGuardandoMetodo(false);
+    }
+  }
+
+  async function handleGuardarSoporte() {
+    setGuardandoSoporte(true);
+    try {
+      await actualizarSoporteTelefono(soporteTelefono.trim() || null);
+      mostrarExito("Guardado. Ya aparece el botón de contacto en captura.");
+    } catch {
+      mostrarError("No se pudo guardar el número de soporte.");
+    } finally {
+      setGuardandoSoporte(false);
     }
   }
 
@@ -198,6 +215,29 @@ export function Configuraciones({ rol }: { rol: "ADMIN" | "AUDITOR" }) {
               <option value="WEBSTER">Webster (Sainte-Laguë)</option>
             </select>
           </label>
+        </div>
+      )}
+
+      {!cargando && (
+        <div className="card">
+          <h3>Support Number</h3>
+          <p className="nota-bloqueo">
+            El número que ve el veedor/coordinador en <strong>captura</strong> para contactar al equipo de
+            campaña una vez que ya envió su acta (botón "Contactar por WhatsApp"). Debe ser un número con
+            WhatsApp activo.
+          </p>
+          <label className="campo-etiquetado campo-soporte">
+            <span>Número (con código de país)</span>
+            <input
+              type="tel"
+              placeholder="Ej: 0999999999"
+              value={soporteTelefono}
+              onChange={(e) => setSoporteTelefono(e.target.value)}
+            />
+          </label>
+          <button disabled={guardandoSoporte} onClick={handleGuardarSoporte}>
+            {guardandoSoporte ? "Guardando..." : "Guardar número"}
+          </button>
         </div>
       )}
 

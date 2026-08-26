@@ -13,16 +13,20 @@ type Props = {
 
 export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada }: Props) {
   const { mostrarError } = useToast();
-  const [votos, setVotos] = useState<Record<string, number>>(
-    Object.fromEntries(candidatos.map((c) => [c.id, 0]))
+  // Los campos de votos arrancan vacíos (no en "0") -- un 0 real y un campo
+  // sin tocar deben verse distinto, y así nadie tiene que borrar un cero
+  // antes de escribir su número. "0" queda solo como placeholder.
+  const [votos, setVotos] = useState<Record<string, string>>(
+    Object.fromEntries(candidatos.map((c) => [c.id, ""]))
   );
-  const [blancos, setBlancos] = useState(0);
-  const [nulos, setNulos] = useState(0);
+  const [blancos, setBlancos] = useState("");
+  const [nulos, setNulos] = useState("");
   const [totalVotantes, setTotalVotantes] = useState("");
   const [novedades, setNovedades] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
 
-  async function handleRegistrar() {
+  function handleRevisar() {
     const totalVotantesNum = Number(totalVotantes);
     if (totalVotantes.trim() === "" || Number.isNaN(totalVotantesNum) || totalVotantesNum < 0) {
       mostrarError("Ingresa el total de votos de esta junta.");
@@ -32,6 +36,10 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
       mostrarError('Ingresa "Ninguna" u otra novedad en el campo de Novedades.');
       return;
     }
+    setMostrarConfirmacion(true);
+  }
+
+  async function handleConfirmarRegistro() {
     setGuardando(true);
     try {
       // Se guarda primero en la cola local (funciona sin conexión) y se
@@ -39,16 +47,17 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
       await encolarActa({
         mesaId: mesa.id,
         contestId: contest.id,
-        votosBlancos: blancos,
-        votosNulos: nulos,
-        totalVotantes: totalVotantesNum,
+        votosBlancos: Number(blancos) || 0,
+        votosNulos: Number(nulos) || 0,
+        totalVotantes: Number(totalVotantes),
         novedades: novedades.trim(),
-        votos: candidatos.map((c) => ({ candidateId: c.id, votos: votos[c.id] ?? 0 })),
+        votos: candidatos.map((c) => ({ candidateId: c.id, votos: Number(votos[c.id]) || 0 })),
         submittedBy: perfilId,
       });
       onRegistrada();
     } catch {
       mostrarError("No se pudo guardar en este dispositivo. Intenta de nuevo.");
+      setMostrarConfirmacion(false);
     } finally {
       setGuardando(false);
     }
@@ -67,8 +76,9 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
             type="number"
             inputMode="numeric"
             min={0}
-            value={votos[c.id] ?? 0}
-            onChange={(e) => setVotos((v) => ({ ...v, [c.id]: Number(e.target.value) }))}
+            placeholder="0"
+            value={votos[c.id] ?? ""}
+            onChange={(e) => setVotos((v) => ({ ...v, [c.id]: e.target.value }))}
           />
         </label>
       ))}
@@ -79,8 +89,9 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           type="number"
           inputMode="numeric"
           min={0}
+          placeholder="0"
           value={nulos}
-          onChange={(e) => setNulos(Number(e.target.value))}
+          onChange={(e) => setNulos(e.target.value)}
         />
       </label>
       <label className="campo-voto">
@@ -89,8 +100,9 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           type="number"
           inputMode="numeric"
           min={0}
+          placeholder="0"
           value={blancos}
-          onChange={(e) => setBlancos(Number(e.target.value))}
+          onChange={(e) => setBlancos(e.target.value)}
         />
       </label>
       <label className="campo-voto">
@@ -100,6 +112,7 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
           inputMode="numeric"
           min={0}
           required
+          placeholder="0"
           value={totalVotantes}
           onChange={(e) => setTotalVotantes(e.target.value)}
         />
@@ -115,9 +128,60 @@ export function ActaFormCard({ mesa, contest, candidatos, perfilId, onRegistrada
         />
       </label>
 
-      <button disabled={guardando} onClick={handleRegistrar}>
-        {guardando ? "Guardando..." : "Registrar"}
+      <button disabled={guardando} onClick={handleRevisar}>
+        Registrar
       </button>
+
+      {mostrarConfirmacion && (
+        <div className="modal-fondo" onClick={() => !guardando && setMostrarConfirmacion(false)}>
+          <div className="modal-tarjeta" onClick={(e) => e.stopPropagation()}>
+            <h3>Confirma antes de enviar</h3>
+            <p>Revisa que estos datos coincidan con el acta física de esta junta.</p>
+
+            <ul className="lista-votos lista-votos-modal">
+              {candidatos.map((c) => (
+                <li key={c.id}>
+                  <span>
+                    {c.nombres} {c.apellidos}
+                  </span>
+                  <strong>{Number(votos[c.id]) || 0}</strong>
+                </li>
+              ))}
+              <li>
+                <span>Votos nulos</span>
+                <strong>{Number(nulos) || 0}</strong>
+              </li>
+              <li>
+                <span>Votos en blanco</span>
+                <strong>{Number(blancos) || 0}</strong>
+              </li>
+              <li>
+                <span>Total de votos</span>
+                <strong>{Number(totalVotantes) || 0}</strong>
+              </li>
+            </ul>
+
+            <p className="modal-novedades-etiqueta">Novedades</p>
+            <p className="modal-novedades-texto">{novedades.trim()}</p>
+
+            <p className="modal-advertencia">Una vez enviada, esta acta no se puede volver a editar.</p>
+
+            <div className="modal-acciones">
+              <button
+                type="button"
+                className="boton-secundario"
+                disabled={guardando}
+                onClick={() => setMostrarConfirmacion(false)}
+              >
+                Corregir
+              </button>
+              <button type="button" disabled={guardando} onClick={handleConfirmarRegistro}>
+                {guardando ? "Enviando..." : "Confirmar y enviar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

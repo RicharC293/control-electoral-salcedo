@@ -22,3 +22,16 @@ export async function actualizarMetodoReparto(metodo: MetodoReparto): Promise<vo
   const { error } = await supabase.from("configuracion").update({ metodo_reparto: metodo }).eq("id", true);
   if (error) throw error;
 }
+
+// Número que se muestra en captura (botón "Contactar por WhatsApp") una vez
+// que un veedor/coordinador ya envió su acta.
+export async function obtenerSoporteTelefono(): Promise<string | null> {
+  const { data, error } = await supabase.from("configuracion").select("soporte_telefono").single();
+  if (error) return null;
+  return data?.soporte_telefono ?? null;
+}
+
+export async function actualizarSoporteTelefono(telefono: string | null): Promise<void> {
+  const { error } = await supabase.from("configuracion").update({ soporte_telefono: telefono }).eq("id", true);
+  if (error) throw error;
+}
