@@ -478,6 +478,10 @@ export function Home() {
                   <dd>{mesaParaFicha.zona_nombre}</dd>
                 </div>
               )}
+              <div>
+                <dt>Recinto</dt>
+                <dd>{mesaParaFicha.recinto_nombre}</dd>
+              </div>
             </dl>
           )}
 
