@@ -285,6 +285,16 @@ export async function generarEnlaceAcceso(perfil: PerfilAdmin, creadoPor: string
   const hash = await sha256Hex(raw);
   const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
+  // Revoca cualquier enlace anterior de este perfil -- si no, "Regenerar" solo
+  // agregaba un token más sin invalidar el viejo, y el enlace ya compartido
+  // seguía sirviendo para siempre (hasta su expiración de 14 días).
+  const { error: errRevoke } = await supabase
+    .from("access_tokens")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("perfil_id", perfil.id)
+    .is("revoked_at", null);
+  if (errRevoke) throw errRevoke;
+
   const { error } = await supabase.from("access_tokens").insert({
     perfil_id: perfil.id,
     token_hash: hash,
